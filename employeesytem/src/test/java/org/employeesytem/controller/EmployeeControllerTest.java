@@ -20,6 +20,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -117,5 +118,37 @@ public class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Employee with id 101 not exists"));
+    }
+
+    @Test
+    public void shouldUpdateEmployeeWhenIdExists() throws Exception {
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+
+        when(employeeService.updateEmployee(1, expectedEmployee)).thenReturn(expectedEmployee);
+
+        mockMvc.perform(put("/api/v1/employees/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(expectedResult))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(expectedResult));
+    }
+
+    @Test
+    public void shouldThrowEmployeeNotFoundWhenIdNotExistsForUpdate() throws Exception {
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+
+        when(employeeService.updateEmployee(1, expectedEmployee))
+                .thenThrow(new EmployeeNotFoundException("Employee with ID 101 not found"));
+
+        mockMvc.perform(put("/api/v1/employees/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(expectedResult))
+                .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Employee with ID 101 not found"));
     }
 }

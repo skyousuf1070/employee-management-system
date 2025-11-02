@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 
@@ -40,5 +41,11 @@ public class EmployeeController {
     @GetMapping("/{id}")
     public ResponseEntity<Employee> findEmployeeById(@PathVariable int id) {
         return ResponseEntity.ok(employeeService.findByEmployeeId(id));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Employee> updateEmployee(@PathVariable int id,
+                                                   @RequestBody Employee employee) {
+        return ResponseEntity.ok(employeeService.updateEmployee(id, employee));
     }
 }

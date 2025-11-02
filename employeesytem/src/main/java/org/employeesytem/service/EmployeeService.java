@@ -37,4 +37,8 @@ public class EmployeeService {
             throw new EmployeeNotFoundException("Employee with id " + employeeId + " not exists");
         }
     }
+
+    public Employee updateEmployee(int id, Employee employee) {
+        return repository.update(id, employee);
+    }
 }
