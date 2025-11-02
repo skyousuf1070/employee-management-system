@@ -10,6 +10,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
@@ -42,8 +43,8 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnAllEmployees() throws Exception {
-        Employee employee1 = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev");
-        Employee employee2 = new Employee(2, "Bob", "B", "bca@gmail.com", "HR");
+        Employee employee1 = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        Employee employee2 = new Employee(2, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
         List<Employee> mockEmployees = List.of(employee1, employee2);
         String expectedResult = objectMapper.writeValueAsString(mockEmployees);
 

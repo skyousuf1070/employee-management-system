@@ -1,3 +1,20 @@
 spring:
-  application:
-    name: employeesytem
+  datasource:
+    url: jdbc:mysql://localhost:3306/employee_db
+    username: root
+    password: Yousuf@1070
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  sql:
+    init:
+      mode: always # runs schema.sql or data.sql if present
+
+  hikari:
+    maximum-pool-size: 10
+
+  main:
+    allow-bean-definition-overriding: true
+
+logging:
+  level:
+    org.springframework.jdbc.core: DEBUG
