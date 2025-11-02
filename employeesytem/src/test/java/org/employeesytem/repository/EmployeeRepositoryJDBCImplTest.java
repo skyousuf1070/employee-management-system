@@ -12,6 +12,7 @@ import org.springframework.jdbc.core.RowMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -19,6 +20,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -70,5 +72,22 @@ class EmployeeRepositoryJDBCImplTest {
         IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
                 () -> repository.save(duplicateEmployee));
         assertTrue(exception.getMessage().contains("already exists"));
+    }
+
+    @Test
+    void shouldReturnEmployeeWhenIdExists() {
+        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
+        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<Employee>>any(), anyInt()))
+                .thenReturn(List.of(expectedEmployee));
+        Optional<Employee> actualEmployee = repository.findById(101);
+        actualEmployee.ifPresent(employee -> assertEquals(expectedEmployee, employee));
+    }
+
+    @Test
+    void shouldReturnEmptyWhenIdNotExists() {
+        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<Employee>>any(), anyInt()))
+                .thenReturn(List.of());
+        Optional<Employee> actualEmployee = repository.findById(101);
+        assertEquals(Optional.empty(), actualEmployee);
     }
 }

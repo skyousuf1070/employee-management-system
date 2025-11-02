@@ -4,12 +4,15 @@ import java.math.BigDecimal;
 import java.util.Objects;
 
 public class Employee {
-    private final int id;
-    private final String firstName;
-    private final String lastName;
-    private final String email;
-    private final String department;
-    private final BigDecimal salary;
+    private int id;
+    private String firstName;
+    private String lastName;
+    private String email;
+    private String department;
+    private BigDecimal salary;
+
+    public Employee() {
+    }
 
     public Employee(int id, String firstName, String lastName, String email, String department, BigDecimal salary) {
         this.id = id;
@@ -42,6 +45,30 @@ public class Employee {
 
     public BigDecimal getSalary() {
         return salary;
+    }
+
+    public void setId(int id) {
+        this.id = id;
+    }
+
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
+    }
+
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setDepartment(String department) {
+        this.department = department;
+    }
+
+    public void setSalary(BigDecimal salary) {
+        this.salary = salary;
     }
 
     @Override

@@ -2,6 +2,7 @@ package org.employeesytem.service;
 
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
+import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.repository.EmployeeRepositoryJDBCImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -63,5 +65,28 @@ class EmployeeServiceTest {
         );
 
         assertEquals("Employee with id 101 already exists", ex.getMessage());
+    }
+
+    @Test
+    void shouldReturnTheEmployeesWhenIdExists() {
+        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
+
+        when(repository.findById(101)).thenReturn(Optional.of(expectedEmployee));
+
+        Employee actualEmployee = service.findByEmployeeId(101);
+        assertEquals(expectedEmployee, actualEmployee);
+    }
+
+    @Test
+    void shouldThrowEmployeeNotFoundExceptionWhenIdNotExists() {
+        when(repository.findById(101))
+                .thenThrow(new EmployeeNotFoundException("Employee with id 101 not exists"));
+
+        EmployeeNotFoundException ex = assertThrows(
+                EmployeeNotFoundException.class,
+                () -> service.findByEmployeeId(101)
+        );
+
+        assertEquals("Employee with id 101 not exists", ex.getMessage());
     }
 }

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 import java.util.List;
 
@@ -34,5 +35,10 @@ public class EmployeeController {
     public ResponseEntity<Employee> addEmployee(@RequestBody Employee employee) {
         Employee savedEmployee = employeeService.addEmployee(employee);
         return ResponseEntity.status(HttpStatus.CREATED).body(savedEmployee);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<Employee> findEmployeeById(@PathVariable int id) {
+        return ResponseEntity.ok(employeeService.findByEmployeeId(id));
     }
 }

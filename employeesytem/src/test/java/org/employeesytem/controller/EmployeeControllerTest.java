@@ -3,6 +3,7 @@ package org.employeesytem.controller;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
+import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.service.EmployeeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -90,5 +91,31 @@ public class EmployeeControllerTest {
                         .content(jsonRequest))
                 .andExpect(status().isConflict())
                 .andExpect(content().string("Employee with id 101 already exists"));
+    }
+
+    @Test
+    public void shouldReturnEmployeeWhenIdExists() throws Exception {
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+
+        when(employeeService.findByEmployeeId(1)).thenReturn(expectedEmployee);
+
+        mockMvc.perform(get("/api/v1/employees/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(expectedResult));
+    }
+
+    @Test
+    void shouldReturnNotFoundWhenIdNotExists() throws Exception {
+        when(employeeService.findByEmployeeId(101))
+                .thenThrow(new EmployeeNotFoundException("Employee with id 101 not exists"));
+
+        mockMvc.perform(get("/api/v1/employees/101")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Employee with id 101 not exists"));
     }
 }

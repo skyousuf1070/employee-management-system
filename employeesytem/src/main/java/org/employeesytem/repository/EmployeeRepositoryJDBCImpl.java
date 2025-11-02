@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
@@ -36,5 +37,12 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
         } catch (DuplicateKeyException exception) {
             throw new IllegalArgumentException("Employee with id " + employee.getId() + " already exists", exception);
         }
+    }
+
+    public Optional<Employee> findById(int id) {
+        String sql = "SELECT * FROM employee WHERE id = ?";
+        List<Employee> employees = jdbc.query(sql,
+                new BeanPropertyRowMapper<>(Employee.class), id);
+        return employees.isEmpty() ? Optional.empty() : Optional.of(employees.get(0));
     }
 }
