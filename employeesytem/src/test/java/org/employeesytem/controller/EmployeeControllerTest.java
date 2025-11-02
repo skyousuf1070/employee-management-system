@@ -2,6 +2,7 @@ package org.employeesytem.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.employeesytem.dto.Employee;
+import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.service.EmployeeService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,10 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -56,5 +59,36 @@ public class EmployeeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(expectedResult));
+    }
+
+    @Test
+    public void shouldAddAnEmployeeWhenTheIdIsUnique() throws Exception {
+        Employee savedEmployee = new Employee(101, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
+        String expectedJson = objectMapper.writeValueAsString(savedEmployee);
+
+        when(employeeService.addEmployee(any(Employee.class))).thenReturn(savedEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(expectedJson))
+                .andExpect(status().isCreated())
+                .andExpect(content().json(expectedJson));
+    }
+
+    @Test
+    void shouldReturnConflictWhenEmployeeAlreadyExists() throws Exception {
+        Employee existingEmployee = new Employee(101, "Yousuf", "Shaik",
+                "yousuf@gmail.com", "Dev", new BigDecimal("123456"));
+
+        String jsonRequest = objectMapper.writeValueAsString(existingEmployee);
+
+        when(employeeService.addEmployee(existingEmployee))
+                .thenThrow(new DuplicateEmployeeException("Employee with id 101 already exists"));
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isConflict())
+                .andExpect(content().string("Employee with id 101 already exists"));
     }
 }
