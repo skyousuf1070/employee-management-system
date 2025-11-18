@@ -18,9 +18,12 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -148,6 +151,26 @@ public class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(expectedResult))
                 .andDo(print())
+                .andExpect(status().isNotFound())
+                .andExpect(content().string("Employee with ID 101 not found"));
+    }
+
+    @Test
+    public void shouldDeleteEmployeeWhenIdExists() throws Exception {
+        doNothing().when(employeeService).deleteEmployee(1);
+
+        mockMvc.perform(delete("/api/v1/employees/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    public void shouldThrowEmployeeNotFoundWhenIdNotExistsForDelete() throws Exception {
+        doThrow(new EmployeeNotFoundException("Employee with ID 101 not found"))
+                .when(employeeService).deleteEmployee(1);
+
+        mockMvc.perform(delete("/api/v1/employees/1")
+                        .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Employee with ID 101 not found"));
     }

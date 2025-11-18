@@ -19,6 +19,9 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 
 class EmployeeServiceTest {
     @Mock
@@ -106,6 +109,25 @@ class EmployeeServiceTest {
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
                 () -> service.updateEmployee(101, expectedEmployee));
+        assertTrue(exception.getMessage().contains("not found"));
+    }
+
+    @Test
+    void shouldDeleteEmployeeWhenIdExists() {
+        doNothing().when(repository).deleteById(101);
+
+        service.deleteEmployee(101);
+
+        verify(repository).deleteById(101);
+    }
+
+    @Test
+    void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsForDelete() {
+        doThrow(new EmployeeNotFoundException("Employee with ID 101 not found"))
+                .when(repository).deleteById(101);
+
+        EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
+                () -> service.deleteEmployee(101));
         assertTrue(exception.getMessage().contains("not found"));
     }
 }

@@ -70,4 +70,12 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
         Integer count = jdbc.queryForObject(sql, Integer.class, id);
         return count != null && count > 0;
     }
+
+    public void deleteById(int id) {
+        String sql = "DELETE FROM employee WHERE id = ?";
+        int rows = jdbc.update(sql, id);
+        if (rows == 0) {
+            throw new EmployeeNotFoundException("Employee with ID " + id + " not found");
+        }
+    }
 }

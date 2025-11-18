@@ -41,4 +41,8 @@ public class EmployeeService {
     public Employee updateEmployee(int id, Employee employee) {
         return repository.update(id, employee);
     }
+
+    public void deleteEmployee(int employeeId) {
+        repository.deleteById(employeeId);
+    }
 }

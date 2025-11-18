@@ -127,4 +127,23 @@ class EmployeeRepositoryJDBCImplTest {
                 () -> repository.update(101, expectedEmployee));
         assertTrue(exception.getMessage().contains("not found"));
     }
+
+    @Test
+    void shouldDeleteEmployeeWhenIdExists() {
+        when(jdbc.update(anyString(), eq(101))).thenReturn(1);
+
+        repository.deleteById(101);
+
+        verify(jdbc).update(anyString(), eq(101));
+    }
+
+    @Test
+    void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsToDelete() {
+        when(jdbc.update(anyString(), eq(101))).thenReturn(0);
+
+        EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
+                () -> repository.deleteById(101));
+
+        assertTrue(exception.getMessage().contains("not found"));
+    }
 }
