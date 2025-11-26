@@ -1,4 +1,6 @@
 spring:
+  profiles:
+    active: jpa
   datasource:
     url: jdbc:mysql://localhost:3306/employee_db
     username: root

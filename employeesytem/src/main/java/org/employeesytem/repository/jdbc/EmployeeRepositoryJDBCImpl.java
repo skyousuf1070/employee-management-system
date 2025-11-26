@@ -3,6 +3,7 @@ package org.employeesytem.repository.jdbc;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.repository.EmployeeRepository;
+import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
+@Profile("jdbc")
 public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
     private final JdbcTemplate jdbc;
 

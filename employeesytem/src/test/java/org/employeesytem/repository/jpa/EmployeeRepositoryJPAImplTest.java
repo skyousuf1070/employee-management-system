@@ -21,12 +21,10 @@ import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
 
-class EmployeeRepositoryJPATest {
-    @Mock
-    JdbcTemplate jdbc;
+class EmployeeRepositoryJPAImplTest {
 
     @Mock
-    EmployeeRepositoryJPA repository;
+    EmployeeRepositoryJPAImpl repository;
 
     @BeforeEach
     void setup() {

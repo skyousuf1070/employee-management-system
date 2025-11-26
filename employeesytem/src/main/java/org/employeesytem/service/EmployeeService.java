@@ -3,7 +3,7 @@ package org.employeesytem.service;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
-import org.employeesytem.repository.jpa.EmployeeRepositoryJPA;
+import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +11,9 @@ import java.util.Optional;
 
 @Service
 public class EmployeeService {
-    private final EmployeeRepositoryJPA repository;
+    private final EmployeeRepository repository;
 
-    public EmployeeService(EmployeeRepositoryJPA repository) {
+    public EmployeeService(EmployeeRepository repository) {
         this.repository = repository;
     }
 

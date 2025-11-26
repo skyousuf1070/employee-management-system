@@ -3,7 +3,7 @@ package org.employeesytem.service;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
-import org.employeesytem.repository.jpa.EmployeeRepositoryJPA;
+import org.employeesytem.repository.jpa.EmployeeRepositoryJPAImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 
 class EmployeeServiceTest {
     @Mock
-    private EmployeeRepositoryJPA repository;
+    private EmployeeRepositoryJPAImpl repository;
 
     @InjectMocks
     private EmployeeService service;
