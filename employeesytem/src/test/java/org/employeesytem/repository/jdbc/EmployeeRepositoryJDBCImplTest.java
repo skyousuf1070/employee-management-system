@@ -70,9 +70,9 @@ class EmployeeRepositoryJDBCImplTest {
         when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
                 .thenThrow(new DuplicateKeyException("Duplicate entry for id"));
 
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        DuplicateKeyException exception = assertThrows(DuplicateKeyException.class,
                 () -> repository.save(duplicateEmployee));
-        assertTrue(exception.getMessage().contains("already exists"));
+        assertTrue(exception.getMessage().contains("Duplicate entry for id"));
     }
 
     @Test
@@ -100,32 +100,8 @@ class EmployeeRepositoryJDBCImplTest {
         when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
                 .thenReturn(1);
 
-        Employee actualEmployee = repository.update(101, expectedEmployee);
+        Employee actualEmployee = repository.save(expectedEmployee);
         assertEquals(expectedEmployee, actualEmployee);
-    }
-
-    @Test
-    void shouldThrowRuntimeExceptionWhenTheUpdateFails() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
-
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), anyInt())).thenReturn(1);
-        when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("Failed to update employee with ID 101"));
-
-        RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> repository.update(101, expectedEmployee));
-        assertTrue(exception.getMessage().contains("Failed to update employee with ID"));
-    }
-
-    @Test
-    void shouldThrowEmployeeNotFoundExceptionWhenIdNotExists() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
-
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), anyInt())).thenReturn(0);
-
-        EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
-                () -> repository.update(101, expectedEmployee));
-        assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test

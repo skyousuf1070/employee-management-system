@@ -12,7 +12,5 @@ public interface EmployeeRepository {
 
     Optional<Employee> findById(int id);
 
-    Employee update(int id, Employee employee);
-
     void deleteById(int id);
 }

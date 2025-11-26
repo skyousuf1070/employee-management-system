@@ -26,6 +26,14 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
     }
 
     public Employee save(Employee employee) {
+        int rows = update(employee);
+        if (rows > 0) {
+            return employee;
+        }
+        return insert(employee);
+    }
+
+    private Employee insert(Employee employee) {
         try {
             String sql = "INSERT INTO employee (id, first_name, last_name, email, department, salary) VALUES (?, ?, ?, ?, ?, ?)";
             jdbc.update(sql,
@@ -48,28 +56,15 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
         return employees.isEmpty() ? Optional.empty() : Optional.of(employees.get(0));
     }
 
-    public Employee update(int id, Employee employee) {
-        if (!existsById(id)) {
-            throw new EmployeeNotFoundException("Employee with ID " + id + " not found");
-        }
+    private int update(Employee employee) {
         String sql = "UPDATE employee SET first_name = ?, last_name = ?, email = ?, department = ?, salary = ? WHERE id = ?";
-        int rows = jdbc.update(sql,
+        return jdbc.update(sql,
                 employee.getFirstName(),
                 employee.getLastName(),
                 employee.getEmail(),
                 employee.getDepartment(),
                 employee.getSalary(),
-                id);
-        if (rows == 0) {
-            throw new RuntimeException("Failed to update employee with ID " + id);
-        }
-        return employee;
-    }
-
-    private boolean existsById(int id) {
-        String sql = "SELECT COUNT(*) FROM employee WHERE id = ?";
-        Integer count = jdbc.queryForObject(sql, Integer.class, id);
-        return count != null && count > 0;
+                employee.getId());
     }
 
     public void deleteById(int id) {

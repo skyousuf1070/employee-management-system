@@ -128,7 +128,7 @@ public class EmployeeControllerTest {
         Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
-        when(employeeService.updateEmployee(1, expectedEmployee)).thenReturn(expectedEmployee);
+        when(employeeService.updateEmployee(1,expectedEmployee)).thenReturn(expectedEmployee);
 
         mockMvc.perform(put("/api/v1/employees/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,15 +144,15 @@ public class EmployeeControllerTest {
         Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
-        when(employeeService.updateEmployee(1, expectedEmployee))
-                .thenThrow(new EmployeeNotFoundException("Employee with ID 101 not found"));
+        when(employeeService.updateEmployee(1,expectedEmployee))
+                .thenThrow(new EmployeeNotFoundException("Employee with ID 1 not found"));
 
         mockMvc.perform(put("/api/v1/employees/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(expectedResult))
                 .andDo(print())
                 .andExpect(status().isNotFound())
-                .andExpect(content().string("Employee with ID 101 not found"));
+                .andExpect(content().string("Employee with ID 1 not found"));
     }
 
     @Test

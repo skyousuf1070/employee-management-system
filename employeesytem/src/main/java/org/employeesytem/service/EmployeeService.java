@@ -39,6 +39,7 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(int id, Employee employee) {
+        employee.setId(id);
         return repository.save(employee);
     }
 
