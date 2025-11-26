@@ -1,9 +1,16 @@
 package org.employeesytem.dto;
 
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import java.math.BigDecimal;
 import java.util.Objects;
 
+@Entity
+@Table(name = "employee")
 public class Employee {
+    @Id
     private int id;
     private String firstName;
     private String lastName;

@@ -1,7 +1,8 @@
-package org.employeesytem.repository;
+package org.employeesytem.repository.jdbc;
 
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
+import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;

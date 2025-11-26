@@ -1,36 +1,32 @@
-package org.employeesytem.repository;
+package org.employeesytem.repository.jpa;
 
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doNothing;
+import static org.mockito.Mockito.doThrow;
 
-class EmployeeRepositoryJDBCImplTest {
+class EmployeeRepositoryJPATest {
     @Mock
     JdbcTemplate jdbc;
 
-    @InjectMocks
-    EmployeeRepositoryJDBCImpl repository;
+    @Mock
+    EmployeeRepositoryJPA repository;
 
     @BeforeEach
     void setup() {
@@ -40,54 +36,48 @@ class EmployeeRepositoryJDBCImplTest {
     @Test
     void shouldReturnAllEmployeesWhenFindAllIsCalled() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<Employee>>any()))
-                .thenReturn(List.of(expectedEmployee));
+        when(repository.findAll()).thenReturn(List.of(expectedEmployee));
+
         List<Employee> all = repository.findAll();
+
         assertEquals(1, all.size());
         assertEquals(expectedEmployee, all.get(0));
+        verify(repository).findAll();
     }
 
     @Test
     void shouldSaveTheEmployeeSuccessfullyWhenTheIdIsUnique() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
+        when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
 
         Employee actualEmployee = repository.save(expectedEmployee);
 
         assertEquals(expectedEmployee, actualEmployee);
-        verify(jdbc).update(anyString(),
-                eq(expectedEmployee.getId()),
-                eq(expectedEmployee.getFirstName()),
-                eq(expectedEmployee.getLastName()),
-                eq(expectedEmployee.getEmail()),
-                eq(expectedEmployee.getDepartment()),
-                eq(expectedEmployee.getSalary()));
+        verify(repository).save(expectedEmployee);
     }
 
     @Test
     void shouldThrowTheExceptionWhenTheIdExists() {
         Employee duplicateEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
+        when(repository.save(duplicateEmployee)).thenThrow(new DuplicateKeyException("Duplicate entry for id"));
 
-        when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
-                .thenThrow(new DuplicateKeyException("Duplicate entry for id"));
-
-        IllegalArgumentException exception = assertThrows(IllegalArgumentException.class,
+        DuplicateKeyException exception = assertThrows(DuplicateKeyException.class,
                 () -> repository.save(duplicateEmployee));
-        assertTrue(exception.getMessage().contains("already exists"));
+
+        assertTrue(exception.getMessage().contains("Duplicate entry for id"));
     }
 
     @Test
     void shouldReturnEmployeeWhenIdExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<Employee>>any(), anyInt()))
-                .thenReturn(List.of(expectedEmployee));
+        when(repository.findById(101)).thenReturn(Optional.of(expectedEmployee));
         Optional<Employee> actualEmployee = repository.findById(101);
         actualEmployee.ifPresent(employee -> assertEquals(expectedEmployee, employee));
     }
 
     @Test
     void shouldReturnEmptyWhenIdNotExists() {
-        when(jdbc.query(anyString(), org.mockito.ArgumentMatchers.<RowMapper<Employee>>any(), anyInt()))
-                .thenReturn(List.of());
+        when(repository.findById(101)).thenReturn(Optional.empty());
         Optional<Employee> actualEmployee = repository.findById(101);
         assertEquals(Optional.empty(), actualEmployee);
     }
@@ -96,11 +86,9 @@ class EmployeeRepositoryJDBCImplTest {
     void shouldUpdateEmployeeWhenIdExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), anyInt())).thenReturn(1);
-        when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(1);
+        when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
 
-        Employee actualEmployee = repository.update(101, expectedEmployee);
+        Employee actualEmployee = repository.save(expectedEmployee);
         assertEquals(expectedEmployee, actualEmployee);
     }
 
@@ -108,12 +96,10 @@ class EmployeeRepositoryJDBCImplTest {
     void shouldThrowRuntimeExceptionWhenTheUpdateFails() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), anyInt())).thenReturn(1);
-        when(jdbc.update(anyString(), any(), any(), any(), any(), any(), any()))
-                .thenThrow(new RuntimeException("Failed to update employee with ID 101"));
+        when(repository.save(expectedEmployee)).thenThrow(new RuntimeException("Failed to update employee with ID 101"));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> repository.update(101, expectedEmployee));
+                () -> repository.save(expectedEmployee));
         assertTrue(exception.getMessage().contains("Failed to update employee with ID"));
     }
 
@@ -121,25 +107,25 @@ class EmployeeRepositoryJDBCImplTest {
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(jdbc.queryForObject(anyString(), eq(Integer.class), anyInt())).thenReturn(0);
+        when(repository.save(expectedEmployee)).thenThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found"));
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
-                () -> repository.update(101, expectedEmployee));
+                () -> repository.save(expectedEmployee));
         assertTrue(exception.getMessage().contains("not found"));
     }
 
     @Test
     void shouldDeleteEmployeeWhenIdExists() {
-        when(jdbc.update(anyString(), eq(101))).thenReturn(1);
+        doNothing().when(repository).deleteById(101);
 
         repository.deleteById(101);
 
-        verify(jdbc).update(anyString(), eq(101));
+        verify(repository).deleteById(101);
     }
 
     @Test
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsToDelete() {
-        when(jdbc.update(anyString(), eq(101))).thenReturn(0);
+        doThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found")).when(repository).deleteById(101);
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
                 () -> repository.deleteById(101));

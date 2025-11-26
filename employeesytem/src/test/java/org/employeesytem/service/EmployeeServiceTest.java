@@ -3,7 +3,7 @@ package org.employeesytem.service;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
-import org.employeesytem.repository.EmployeeRepositoryJDBCImpl;
+import org.employeesytem.repository.jpa.EmployeeRepositoryJPA;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ import static org.mockito.Mockito.verify;
 
 class EmployeeServiceTest {
     @Mock
-    private EmployeeRepositoryJDBCImpl repository;
+    private EmployeeRepositoryJPA repository;
 
     @InjectMocks
     private EmployeeService service;
@@ -94,7 +94,7 @@ class EmployeeServiceTest {
     void shouldUpdateEmployeeWhenIdExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(repository.update(101, expectedEmployee)).thenReturn(expectedEmployee);
+        when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
 
         Employee actualEmployee = service.updateEmployee(101, expectedEmployee);
         assertEquals(expectedEmployee, actualEmployee);
@@ -104,7 +104,7 @@ class EmployeeServiceTest {
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsForUpdate() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(repository.update(101, expectedEmployee))
+        when(repository.save(expectedEmployee))
                 .thenThrow(new EmployeeNotFoundException("Employee with ID 101 not found"));
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,

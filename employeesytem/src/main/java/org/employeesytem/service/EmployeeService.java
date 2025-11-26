@@ -3,7 +3,7 @@ package org.employeesytem.service;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
-import org.employeesytem.repository.EmployeeRepositoryJDBCImpl;
+import org.employeesytem.repository.jpa.EmployeeRepositoryJPA;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,9 +11,9 @@ import java.util.Optional;
 
 @Service
 public class EmployeeService {
-    private final EmployeeRepositoryJDBCImpl repository;
+    private final EmployeeRepositoryJPA repository;
 
-    public EmployeeService(EmployeeRepositoryJDBCImpl repository) {
+    public EmployeeService(EmployeeRepositoryJPA repository) {
         this.repository = repository;
     }
 
@@ -39,7 +39,7 @@ public class EmployeeService {
     }
 
     public Employee updateEmployee(int id, Employee employee) {
-        return repository.update(id, employee);
+        return repository.save(employee);
     }
 
     public void deleteEmployee(int employeeId) {
