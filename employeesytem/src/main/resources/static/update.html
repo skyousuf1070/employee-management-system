@@ -8,8 +8,7 @@
 <h2>Update Employee</h2>
 
 <form onsubmit="updateEmployee(event)">
-    Employee ID: <input type="number" id="id" required /><br/><br/>
-
+    Employee ID: <input type="number" id="id" onblur="fetchEmployee()" required /><br/><br/>
     First Name: <input type="text" id="firstName" required /><br/><br/>
     Last Name: <input type="text" id="lastName" required /><br/><br/>
     Email: <input type="email" id="email" required /><br/><br/>
@@ -20,6 +19,31 @@
 </form>
 
 <script>
+    async function fetchEmployee() {
+            const id = document.getElementById("id").value;
+            if (!id) return;
+
+            const response = await fetch(`/api/v1/employees/${id}`);
+            if (!response.ok) {
+                document.getElementById("firstName").value = "";
+                document.getElementById("lastName").value = "";
+                document.getElementById("email").value = "";
+                document.getElementById("department").value = "";
+                document.getElementById("salary").value = "";
+                return;
+            }
+
+            const emp = await response.json();
+
+            // Auto-fill the form
+            document.getElementById("id").value = emp.id;
+            document.getElementById("firstName").value = emp.firstName;
+            document.getElementById("lastName").value = emp.lastName;
+            document.getElementById("email").value = emp.email;
+            document.getElementById("department").value = emp.department;
+            document.getElementById("salary").value = emp.salary;
+    }
+
     function updateEmployee(e) {
         e.preventDefault();
 
