@@ -36,4 +36,9 @@ public class EmployeeRepositoryJPAImpl implements EmployeeRepository {
     public void deleteById(int id) {
         jpa.deleteById(id);
     }
+
+    @Override
+    public Long count() {
+        return jpa.count();
+    }
 }

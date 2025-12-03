@@ -4,13 +4,26 @@
     <title>Employees List</title>
     <style>
         table, th, td { border: 1px solid black; padding: 8px; }
+        .header-container {
+            /* Makes children line up horizontally */
+            display: flex;
+            /* Pushes the first item (nav) and the last item (p) to the edges */
+            justify-content: space-between;
+            /* Ensures alignment in the vertical center */
+            align-items: center;
+        }
     </style>
 </head>
 <body>
 
-<a href="/index.html">Home</a> |
-<a href="/create.html">Create Employee</a> |
-<a href="/update.html">Update Employee</a>
+<div class="header-container">
+    <div>
+        <a href="/index.html">Home</a> |
+        <a href="/create.html">Create Employee</a> |
+        <a href="/update.html">Update Employee</a>
+    </div>
+    <p>Total Employees: <span id="empCount">Loading...</span></p>
+</div>
 
 <h2>Employees</h2>
 
@@ -25,34 +38,58 @@
 </table>
 
 <script>
-    function loadEmployees() {
-        fetch("/api/v1/employees")
-            .then(res => res.json())
-            .then(data => {
-                let rows = "";
-                data.forEach(emp => {
-                    rows += `
-                        <tr>
-                            <td>${emp.id}</td>
-                            <td>${emp.firstName}</td>
-                            <td>${emp.lastName}</td>
-                            <td>${emp.email}</td>
-                            <td>${emp.department}</td>
-                            <td>${emp.salary}</td>
-                            <td>
-                                <button onclick="deleteEmployee(${emp.id})">Delete</button>
-                            </td>
-                        </tr>`;
-                });
-                document.querySelector("#employeeTable tbody").innerHTML = rows;
+    async function loadEmployees() {
+        try {
+            const res = await fetch("/api/v1/employees");
+            const data = await res.json();
+
+            let rows = "";
+            data.forEach(emp => {
+                rows += `
+                    <tr>
+                        <td>${emp.id}</td>
+                        <td>${emp.firstName}</td>
+                        <td>${emp.lastName}</td>
+                        <td>${emp.email}</td>
+                        <td>${emp.department}</td>
+                        <td>${emp.salary}</td>
+                        <td>
+                            <button onclick="deleteEmployee(${emp.id})">Delete</button>
+                        </td>
+                    </tr>`;
             });
+            document.querySelector("#employeeTable tbody").innerHTML = rows;
+        } catch (error) {
+            console.error("Error loading employees:", error);
+            document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading employee data.</td></tr>';
+        }
     }
 
     function deleteEmployee(id) {
         fetch(`/api/v1/employees/${id}`, { method: "DELETE" })
-            .then(() => loadEmployees());
+            .then(() => loadEmployees())
+            .catch(error => console.error("Error deleting employee:", error));
     }
 
+    async function loadEmployeeCount() {
+        const countElement = document.getElementById("empCount");
+        try {
+            let response = await fetch("/api/v1/employees/count");
+
+            if (response.ok) {
+                let count = await response.json();
+                countElement.innerText = count;
+            } else {
+                countElement.innerText = "Error fetching count";
+            }
+        } catch (e) {
+            console.error("Network error fetching count:", e);
+            countElement.innerText = "Error";
+        }
+    }
+
+    // Call on page load
+    loadEmployeeCount();
     loadEmployees();
 </script>
 

@@ -174,4 +174,28 @@ public class EmployeeControllerTest {
                 .andExpect(status().isNotFound())
                 .andExpect(content().string("Employee with ID 101 not found"));
     }
+
+    @Test
+    public void shouldReturnZeroCount() throws Exception {
+        when(employeeService.getEmployeeCount()).thenReturn(0L);
+
+        mockMvc.perform(get("/api/v1/employees/count")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(String.valueOf(0)));
+    }
+
+    @Test
+    public void shouldReturnAllEmployeesCount() throws Exception {
+        when(employeeService.getEmployeeCount()).thenReturn(10L);
+
+        mockMvc.perform(get("/api/v1/employees/count")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json(String.valueOf(10)));
+    }
 }

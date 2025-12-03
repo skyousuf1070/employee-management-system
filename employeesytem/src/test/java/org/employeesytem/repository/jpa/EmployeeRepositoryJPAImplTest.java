@@ -5,9 +5,9 @@ import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
+import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -23,8 +23,11 @@ import static org.mockito.Mockito.doThrow;
 
 class EmployeeRepositoryJPAImplTest {
 
-    @Mock
+    @InjectMocks
     EmployeeRepositoryJPAImpl repository;
+
+    @Mock
+    EmployeeJPARepository jpa;
 
     @BeforeEach
     void setup() {
@@ -34,30 +37,30 @@ class EmployeeRepositoryJPAImplTest {
     @Test
     void shouldReturnAllEmployeesWhenFindAllIsCalled() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(repository.findAll()).thenReturn(List.of(expectedEmployee));
+        when(jpa.findAll()).thenReturn(List.of(expectedEmployee));
 
         List<Employee> all = repository.findAll();
 
         assertEquals(1, all.size());
         assertEquals(expectedEmployee, all.get(0));
-        verify(repository).findAll();
+        verify(jpa).findAll();
     }
 
     @Test
     void shouldSaveTheEmployeeSuccessfullyWhenTheIdIsUnique() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
+        when(jpa.save(expectedEmployee)).thenReturn(expectedEmployee);
 
         Employee actualEmployee = repository.save(expectedEmployee);
 
         assertEquals(expectedEmployee, actualEmployee);
-        verify(repository).save(expectedEmployee);
+        verify(jpa).save(expectedEmployee);
     }
 
     @Test
     void shouldThrowTheExceptionWhenTheIdExists() {
         Employee duplicateEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(repository.save(duplicateEmployee)).thenThrow(new DuplicateKeyException("Duplicate entry for id"));
+        when(jpa.save(duplicateEmployee)).thenThrow(new DuplicateKeyException("Duplicate entry for id"));
 
         DuplicateKeyException exception = assertThrows(DuplicateKeyException.class,
                 () -> repository.save(duplicateEmployee));
@@ -68,14 +71,14 @@ class EmployeeRepositoryJPAImplTest {
     @Test
     void shouldReturnEmployeeWhenIdExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(repository.findById(101)).thenReturn(Optional.of(expectedEmployee));
+        when(jpa.findById(101)).thenReturn(Optional.of(expectedEmployee));
         Optional<Employee> actualEmployee = repository.findById(101);
         actualEmployee.ifPresent(employee -> assertEquals(expectedEmployee, employee));
     }
 
     @Test
     void shouldReturnEmptyWhenIdNotExists() {
-        when(repository.findById(101)).thenReturn(Optional.empty());
+        when(jpa.findById(101)).thenReturn(Optional.empty());
         Optional<Employee> actualEmployee = repository.findById(101);
         assertEquals(Optional.empty(), actualEmployee);
     }
@@ -84,7 +87,7 @@ class EmployeeRepositoryJPAImplTest {
     void shouldUpdateEmployeeWhenIdExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
+        when(jpa.save(expectedEmployee)).thenReturn(expectedEmployee);
 
         Employee actualEmployee = repository.save(expectedEmployee);
         assertEquals(expectedEmployee, actualEmployee);
@@ -94,7 +97,7 @@ class EmployeeRepositoryJPAImplTest {
     void shouldThrowRuntimeExceptionWhenTheUpdateFails() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(repository.save(expectedEmployee)).thenThrow(new RuntimeException("Failed to update employee with ID 101"));
+        when(jpa.save(expectedEmployee)).thenThrow(new RuntimeException("Failed to update employee with ID 101"));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
                 () -> repository.save(expectedEmployee));
@@ -105,7 +108,7 @@ class EmployeeRepositoryJPAImplTest {
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExists() {
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
 
-        when(repository.save(expectedEmployee)).thenThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found"));
+        when(jpa.save(expectedEmployee)).thenThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found"));
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
                 () -> repository.save(expectedEmployee));
@@ -114,20 +117,40 @@ class EmployeeRepositoryJPAImplTest {
 
     @Test
     void shouldDeleteEmployeeWhenIdExists() {
-        doNothing().when(repository).deleteById(101);
+        doNothing().when(jpa).deleteById(101);
 
         repository.deleteById(101);
 
-        verify(repository).deleteById(101);
+        verify(jpa).deleteById(101);
     }
 
     @Test
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsToDelete() {
-        doThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found")).when(repository).deleteById(101);
+        doThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found")).when(jpa).deleteById(101);
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
                 () -> repository.deleteById(101));
 
         assertTrue(exception.getMessage().contains("not found"));
+    }
+
+    @Test
+    void shouldReturnZeroWhenCountIsCalled() {
+        when(jpa.count()).thenReturn(0L);
+
+        Long count = repository.count();
+
+        assertEquals(0, count);
+        verify(jpa).count();
+    }
+
+    @Test
+    void shouldReturnAllEmployeesCountWhenCountIsCalled() {
+        when(jpa.count()).thenReturn(10L);
+
+        Long count = repository.count();
+
+        assertEquals(10, count);
+        verify(jpa).count();
     }
 }

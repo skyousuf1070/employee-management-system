@@ -130,4 +130,20 @@ class EmployeeServiceTest {
                 () -> service.deleteEmployee(101));
         assertTrue(exception.getMessage().contains("not found"));
     }
+
+    @Test
+    void shouldReturnZeroWhenGetEmployeeCountIsCalled() {
+        when(repository.count()).thenReturn(0L);
+
+        Long actualCount = service.getEmployeeCount();
+        assertEquals(0, actualCount);
+    }
+
+    @Test
+    void shouldReturnAllEmployeesCountWhenGetEmployeeCountIsCalled() {
+        when(repository.count()).thenReturn(10L);
+
+        Long actualCount = service.getEmployeeCount();
+        assertEquals(10, actualCount);
+    }
 }

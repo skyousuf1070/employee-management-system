@@ -76,4 +76,9 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
             throw new EmployeeNotFoundException("Employee with ID " + id + " not found");
         }
     }
+
+    @Override
+    public Long count() {
+        return jdbc.queryForObject("SELECT COUNT(*) FROM employee", Long.class);
+    }
 }

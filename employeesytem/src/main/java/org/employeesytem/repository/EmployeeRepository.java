@@ -13,4 +13,6 @@ public interface EmployeeRepository {
     Optional<Employee> findById(int id);
 
     void deleteById(int id);
+
+    Long count();
 }

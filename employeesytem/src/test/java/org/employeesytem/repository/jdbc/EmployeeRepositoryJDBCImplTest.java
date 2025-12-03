@@ -122,4 +122,24 @@ class EmployeeRepositoryJDBCImplTest {
 
         assertTrue(exception.getMessage().contains("not found"));
     }
+
+    @Test
+    void shouldReturnZeroWhenCountIsCalled() {
+        when(jdbc.queryForObject(anyString(), eq(Long.class))).thenReturn(0L);
+
+        Long count = repository.count();
+
+        assertEquals(0, count);
+        verify(jdbc).queryForObject(anyString(), eq(Long.class));
+    }
+
+    @Test
+    void shouldReturnAllEmployeesCountWhenCountIsCalled() {
+        when(jdbc.queryForObject(anyString(), eq(Long.class))).thenReturn(10L);
+
+        Long count = repository.count();
+
+        assertEquals(10, count);
+        verify(jdbc).queryForObject(anyString(), eq(Long.class));
+    }
 }
