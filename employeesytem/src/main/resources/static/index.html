@@ -39,11 +39,11 @@
 <script>
     async function loadEmployees() {
         try {
-            const res = await fetch("/api/v1/employees");
+            const res = await fetch("/api/v1/employees?page=0&size=10");
             const data = await res.json();
 
             let rows = "";
-            data.forEach(emp => {
+            data.content.forEach(emp => {
                 rows += `
                     <tr>
                         <td>${emp.id}</td>
@@ -58,6 +58,7 @@
                     </tr>`;
             });
             document.querySelector("#employeeTable tbody").innerHTML = rows;
+            document.getElementById("empCount").innerText = data.page.totalElements;
         } catch (error) {
             console.error("Error loading employees:", error);
             document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading employee data.</td></tr>';
@@ -70,25 +71,7 @@
             .catch(error => console.error("Error deleting employee:", error));
     }
 
-    async function loadEmployeeCount() {
-        const countElement = document.getElementById("empCount");
-        try {
-            let response = await fetch("/api/v1/employees/count");
-
-            if (response.ok) {
-                let count = await response.json();
-                countElement.innerText = count;
-            } else {
-                countElement.innerText = "Error fetching count";
-            }
-        } catch (e) {
-            console.error("Network error fetching count:", e);
-            countElement.innerText = "Error";
-        }
-    }
-
     // Call on page load
-    loadEmployeeCount();
     loadEmployees();
 </script>
 

@@ -9,6 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -40,11 +43,11 @@ class EmployeeServiceTest {
 
     @Test
     void shouldReturnAllEmployeesWhenFindAllEmployeesIsCalled() {
-        when(repository.findAll()).thenReturn(List.of(expectedEmployee));
+        when(repository.findAll(PageRequest.of(0, 5))).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
 
-        List<Employee> allEmployees = service.findAllEmployees();
-        assertEquals(1, allEmployees.size());
-        assertEquals(expectedEmployee, allEmployees.get(0));
+        Page<Employee> allEmployees = service.findAllEmployees(0, 5);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(expectedEmployee, allEmployees.getContent().get(0));
     }
 
     @Test

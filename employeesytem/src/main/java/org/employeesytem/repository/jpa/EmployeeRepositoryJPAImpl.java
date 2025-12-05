@@ -3,9 +3,10 @@ package org.employeesytem.repository.jpa;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.context.annotation.Profile;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -18,8 +19,8 @@ public class EmployeeRepositoryJPAImpl implements EmployeeRepository {
     }
 
     @Override
-    public List<Employee> findAll() {
-        return jpa.findAll();
+    public Page<Employee> findAll(Pageable pageable) {
+        return jpa.findAll(pageable);
     }
 
     @Override

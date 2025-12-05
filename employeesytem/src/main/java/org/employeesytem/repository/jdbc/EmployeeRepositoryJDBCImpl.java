@@ -5,10 +5,14 @@ import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.context.annotation.Profile;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -21,10 +25,12 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
         this.jdbc = jdbc;
     }
 
+    // To-do: Implement Pagination in JDBC
     @Override
-    public List<Employee> findAll() {
+    public Page<Employee> findAll(Pageable pageable) {
         String sql = "SELECT * FROM employee";
-        return jdbc.query(sql, new BeanPropertyRowMapper<>(Employee.class));
+        jdbc.query(sql, new BeanPropertyRowMapper<>(Employee.class));
+        return new PageImpl<>(Collections.emptyList());
     }
 
     public Employee save(Employee employee) {

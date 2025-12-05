@@ -8,6 +8,9 @@ import org.mockito.Mock;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -36,14 +39,15 @@ class EmployeeRepositoryJPAImplTest {
 
     @Test
     void shouldReturnAllEmployeesWhenFindAllIsCalled() {
+        PageRequest pageRequest = PageRequest.of(0, 5);
         Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jpa.findAll()).thenReturn(List.of(expectedEmployee));
+        when(jpa.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
 
-        List<Employee> all = repository.findAll();
+        Page<Employee> all = repository.findAll(pageRequest);
 
-        assertEquals(1, all.size());
-        assertEquals(expectedEmployee, all.get(0));
-        verify(jpa).findAll();
+        assertEquals(1, all.getTotalElements());
+        assertEquals(expectedEmployee, all.getContent().get(0));
+        verify(jpa).findAll(pageRequest);
     }
 
     @Test

@@ -9,6 +9,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -27,6 +28,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @WebMvcTest(EmployeeController.class)
 public class EmployeeControllerTest {
@@ -41,12 +43,17 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnZeroEmployees() throws Exception {
-        when(employeeService.findAllEmployees()).thenReturn(Collections.emptyList());
+        when(employeeService.findAllEmployees(0, 5)).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "5")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON));
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content.length()").value(0))
+                .andExpect(jsonPath("$.page.totalElements").value(0));
     }
 
     @Test
@@ -54,16 +61,24 @@ public class EmployeeControllerTest {
         Employee employee1 = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev", BigDecimal.valueOf(50000));
         Employee employee2 = new Employee(2, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
         List<Employee> mockEmployees = List.of(employee1, employee2);
-        String expectedResult = objectMapper.writeValueAsString(mockEmployees);
 
-        when(employeeService.findAllEmployees()).thenReturn(mockEmployees);
+        when(employeeService.findAllEmployees(0, 5)).thenReturn(new PageImpl<>((mockEmployees)));
 
         mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "5")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json(expectedResult));
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].firstName").value("Alice"))
+                .andExpect(jsonPath("$.content[0].lastName").value("A"))
+                .andExpect(jsonPath("$.content[0].email").value("abc@gmail.com"))
+                .andExpect(jsonPath("$.content[0].department").value("Dev"))
+                .andExpect(jsonPath("$.content[0].salary").value("50000"))
+                .andExpect(jsonPath("$.page.totalElements").value(2));
     }
 
     @Test
@@ -128,7 +143,7 @@ public class EmployeeControllerTest {
         Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
-        when(employeeService.updateEmployee(1,expectedEmployee)).thenReturn(expectedEmployee);
+        when(employeeService.updateEmployee(1, expectedEmployee)).thenReturn(expectedEmployee);
 
         mockMvc.perform(put("/api/v1/employees/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,7 +159,7 @@ public class EmployeeControllerTest {
         Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
-        when(employeeService.updateEmployee(1,expectedEmployee))
+        when(employeeService.updateEmployee(1, expectedEmployee))
                 .thenThrow(new EmployeeNotFoundException("Employee with ID 1 not found"));
 
         mockMvc.perform(put("/api/v1/employees/1")

@@ -3,10 +3,12 @@ package org.employeesytem.controller;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -28,8 +30,10 @@ public class EmployeeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<Employee>> findAllEmployees() {
-        List<Employee> allEmployees = employeeService.findAllEmployees();
+    public ResponseEntity<Page<Employee>> findAllEmployees(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "5") int size) {
+        Page<Employee> allEmployees = employeeService.findAllEmployees(page, size);
         return ResponseEntity.ok(allEmployees);
     }
 

@@ -4,9 +4,11 @@ import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.repository.EmployeeRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -17,8 +19,9 @@ public class EmployeeService {
         this.repository = repository;
     }
 
-    public List<Employee> findAllEmployees() {
-        return repository.findAll();
+    public Page<Employee> findAllEmployees(int page, int size) {
+        Pageable pageRequest = PageRequest.of(page, size);
+        return repository.findAll(pageRequest);
     }
 
     public Employee addEmployee(Employee employee) {
