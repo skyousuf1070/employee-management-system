@@ -3,14 +3,33 @@
 <head>
     <title>Employees List</title>
     <style>
-        table, th, td { border: 1px solid black; padding: 8px; }
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        table, th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+
         .header-container {
-            /* Makes children line up horizontally */
             display: flex;
-            /* Pushes the first item (nav) and the last item (p) to the edges */
             justify-content: space-between;
-            /* Ensures alignment in the vertical center */
             align-items: center;
+            margin-bottom: 20px;
+        }
+
+        /* Pagination Styles */
+        .pagination-container {
+            margin-top: 15px;
+            display: flex;
+            justify-content: flex-end; /* Align to right */
+            align-items: center;
+            gap: 10px;
+        }
+        button {
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        button:disabled {
+            cursor: not-allowed;
+            opacity: 0.5;
         }
     </style>
 </head>
@@ -18,13 +37,13 @@
 
 <div class="header-container">
     <div>
-        <a href="/create.html">Create Employee</a> |
-        <a href="/update.html">Update Employee</a>
+        <a href="/create.html">Create</a> |
+        <a href="/update.html">Update</a>
     </div>
-    <p>Total Employees: <span id="empCount">Loading...</span></p>
+    <h3>Total Employees: <span id="empCount">0</span></h3>
 </div>
 
-<h2>Employees</h2>
+<h2>Employees List</h2>
 
 <table id="employeeTable">
     <thead>
@@ -36,43 +55,105 @@
     <tbody></tbody>
 </table>
 
+<div class="pagination-container">
+    <span id="pageInfo">Page 1 of 1</span>
+    <button id="prevBtn" onclick="changePage(-1)">Previous</button>
+    <button id="nextBtn" onclick="changePage(1)">Next</button>
+</div>
+
 <script>
-    async function loadEmployees() {
+    // GLOBAL STATE
+    let currentPage = 0;
+    const pageSize = 5; // You can change this to 10 or 20
+    let totalPages = 0;
+
+    async function loadEmployees(page = 0) {
         try {
-            const res = await fetch("/api/v1/employees?page=0&size=10");
+            // Update the global current page
+            currentPage = page;
+
+            // Fetch data with dynamic page number and size
+            const res = await fetch(`/api/v1/employees?page=${currentPage}&size=${pageSize}`);
+
+            if (!res.ok) throw new Error("Failed to fetch");
+
             const data = await res.json();
 
+            // 1. EXTRACT DATA
+            // 'data.content' holds the array, 'data.page' holds metadata
+            const employees = data.content;
+            const pageMeta = data.page;
+
+            // Update Total Pages global variable
+            totalPages = pageMeta.totalPages;
+
+            // 2. RENDER TABLE
             let rows = "";
-            data.content.forEach(emp => {
-                rows += `
-                    <tr>
-                        <td>${emp.id}</td>
-                        <td>${emp.firstName}</td>
-                        <td>${emp.lastName}</td>
-                        <td>${emp.email}</td>
-                        <td>${emp.department}</td>
-                        <td>${emp.salary}</td>
-                        <td>
-                            <button onclick="deleteEmployee(${emp.id})">Delete</button>
-                        </td>
-                    </tr>`;
-            });
+            if (employees.length === 0) {
+                rows = '<tr><td colspan="7" style="text-align:center">No employees found.</td></tr>';
+            } else {
+                employees.forEach(emp => {
+                    rows += `
+                        <tr>
+                            <td>${emp.id}</td>
+                            <td>${emp.firstName}</td>
+                            <td>${emp.lastName}</td>
+                            <td>${emp.email}</td>
+                            <td>${emp.department}</td>
+                            <td>${emp.salary}</td>
+                            <td>
+                                <button onclick="deleteEmployee(${emp.id})">Delete</button>
+                            </td>
+                        </tr>`;
+                });
+            }
             document.querySelector("#employeeTable tbody").innerHTML = rows;
-            document.getElementById("empCount").innerText = data.page.totalElements;
+
+            // 3. UPDATE UI INFO (Total count and Page X of Y)
+            document.getElementById("empCount").innerText = pageMeta.totalElements;
+            document.getElementById("pageInfo").innerText = `Page ${pageMeta.number + 1} of ${pageMeta.totalPages}`;
+
+            // 4. ENABLE/DISABLE BUTTONS
+            updatePaginationButtons();
+
         } catch (error) {
             console.error("Error loading employees:", error);
-            document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading employee data.</td></tr>';
+            document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+        }
+    }
+
+    function updatePaginationButtons() {
+        const prevBtn = document.getElementById("prevBtn");
+        const nextBtn = document.getElementById("nextBtn");
+
+        // Disable Prev if we are on the first page (0)
+        prevBtn.disabled = (currentPage === 0);
+
+        // Disable Next if we are on the last page or if there are no pages
+        nextBtn.disabled = (currentPage >= totalPages - 1) || (totalPages === 0);
+    }
+
+    function changePage(direction) {
+        const newPage = currentPage + direction;
+        // Safety check to ensure we don't go out of bounds
+        if (newPage >= 0 && newPage < totalPages) {
+            loadEmployees(newPage);
         }
     }
 
     function deleteEmployee(id) {
+        if(!confirm("Delete this employee?")) return;
+
         fetch(`/api/v1/employees/${id}`, { method: "DELETE" })
-            .then(() => loadEmployees())
+            .then(() => {
+                // Reload the CURRENT page after deletion
+                loadEmployees(currentPage);
+            })
             .catch(error => console.error("Error deleting employee:", error));
     }
 
-    // Call on page load
-    loadEmployees();
+    // Initial Load
+    loadEmployees(0);
 </script>
 
 </body>
