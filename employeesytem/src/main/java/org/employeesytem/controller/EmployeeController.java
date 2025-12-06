@@ -4,6 +4,8 @@ import org.employeesytem.dto.Employee;
 import org.employeesytem.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,8 +17,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.DeleteMapping;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("api/v1/employees")
@@ -32,8 +32,10 @@ public class EmployeeController {
     @GetMapping
     public ResponseEntity<Page<Employee>> findAllEmployees(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "5") int size) {
-        Page<Employee> allEmployees = employeeService.findAllEmployees(page, size);
+            @RequestParam(defaultValue = "5") int size,
+            Sort sort) {
+        PageRequest pageRequest = PageRequest.of(page, size, sort);
+        Page<Employee> allEmployees = employeeService.findAllEmployees(pageRequest);
         return ResponseEntity.ok(allEmployees);
     }
 

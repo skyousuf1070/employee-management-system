@@ -6,10 +6,13 @@ import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.service.EmployeeService;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -17,10 +20,13 @@ import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
@@ -43,17 +49,28 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnZeroEmployees() throws Exception {
-        when(employeeService.findAllEmployees(0, 5)).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(employeeService.findAllEmployees(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
                         .param("size", "5")
+                        .param("sort", "firstName,asc")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.content").isArray())
                 .andExpect(jsonPath("$.content.length()").value(0))
                 .andExpect(jsonPath("$.page.totalElements").value(0));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(5);
+        Sort capturedSort = capturedPageable.getSort();
+        Sort.Order order = capturedSort.getOrderFor("firstName");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
     }
 
     @Test
@@ -62,11 +79,12 @@ public class EmployeeControllerTest {
         Employee employee2 = new Employee(2, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
         List<Employee> mockEmployees = List.of(employee1, employee2);
 
-        when(employeeService.findAllEmployees(0, 5)).thenReturn(new PageImpl<>((mockEmployees)));
+        when(employeeService.findAllEmployees(any(Pageable.class))).thenReturn(new PageImpl<>((mockEmployees)));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
                         .param("size", "5")
+                        .param("sort", "firstName,asc")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())
@@ -79,6 +97,16 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$.content[0].department").value("Dev"))
                 .andExpect(jsonPath("$.content[0].salary").value("50000"))
                 .andExpect(jsonPath("$.page.totalElements").value(2));
+
+        ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture());
+        Pageable capturedPageable = pageableCaptor.getValue();
+        assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
+        assertThat(capturedPageable.getPageSize()).isEqualTo(5);
+        Sort capturedSort = capturedPageable.getSort();
+        Sort.Order order = capturedSort.getOrderFor("firstName");
+        assertThat(order).isNotNull();
+        assertThat(order.getDirection()).isEqualTo(Sort.Direction.ASC);
     }
 
     @Test

@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -21,6 +22,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -43,9 +45,11 @@ class EmployeeServiceTest {
 
     @Test
     void shouldReturnAllEmployeesWhenFindAllEmployeesIsCalled() {
-        when(repository.findAll(PageRequest.of(0, 5))).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
+        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+        when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
 
-        Page<Employee> allEmployees = service.findAllEmployees(0, 5);
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest);
+        verify(repository, times(1)).findAll(pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
         assertEquals(expectedEmployee, allEmployees.getContent().get(0));
     }
