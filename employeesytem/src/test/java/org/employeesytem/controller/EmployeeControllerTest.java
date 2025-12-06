@@ -21,6 +21,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
@@ -126,7 +127,7 @@ public class EmployeeControllerTest {
     @Test
     void shouldReturnConflictWhenEmployeeAlreadyExists() throws Exception {
         Employee existingEmployee = new Employee(101, "Yousuf", "Shaik",
-                "yousuf@gmail.com", "Dev", new BigDecimal("123456"));
+                "yousuf@gmail.com", "IT", new BigDecimal("123456"));
 
         String jsonRequest = objectMapper.writeValueAsString(existingEmployee);
 
@@ -168,7 +169,7 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldUpdateEmployeeWhenIdExists() throws Exception {
-        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "IT", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
         when(employeeService.updateEmployee(1, expectedEmployee)).thenReturn(expectedEmployee);
@@ -184,7 +185,7 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldThrowEmployeeNotFoundWhenIdNotExistsForUpdate() throws Exception {
-        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "Dev", BigDecimal.valueOf(50000));
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "IT", BigDecimal.valueOf(50000));
         String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
 
         when(employeeService.updateEmployee(1, expectedEmployee))
@@ -240,5 +241,122 @@ public class EmployeeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json(String.valueOf(10)));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenEmployeeValidationFails() throws Exception {
+       Employee invalidEmployee = new Employee(1, "", "", "bademail", "", null);
+        String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.firstName").exists())
+                .andExpect(jsonPath("$.lastName").exists())
+                .andExpect(jsonPath("$.email").exists())
+                .andExpect(jsonPath("$.department").exists())
+                .andExpect(jsonPath("$.salary").exists());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSalaryIsLessThanOrEqualZero() throws Exception {
+       Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "yousuf@gmail.com", "Dev", BigDecimal.ZERO);
+        String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.salary").exists());
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenBadEmailIsPassed() throws Exception {
+       Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "bademail", "Dev", BigDecimal.valueOf(100000));
+        String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.email").exists());
+    }
+
+    @Test
+    void shouldReturnBadRequestForExcessiveNameLength() throws Exception {
+        String excessivelyLongName = "A".repeat(51);
+        Employee invalidEmployee = new Employee(1, excessivelyLongName, excessivelyLongName, "valid@example.com", "HR", BigDecimal.valueOf(50000));
+        String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.firstName").exists())
+                .andExpect(jsonPath("$.lastName").exists());
+    }
+
+    @Test
+    void shouldReturnBadRequestForInvalidDepartmentValue() throws Exception {
+        Employee invalidEmployee = new Employee(1, "Valid", "Name", "valid@example.com", "CLEANING", BigDecimal.valueOf(50000));
+        String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
+
+        mockMvc.perform(post("/api/v1/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonRequest))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.department").exists())
+                .andExpect(jsonPath("$.department").value("Department must be one of: HR, IT, MARKETING, SALES, FINANCE"));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenPageIsNegative() throws Exception {
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "-1")
+                        .param("size", "5")
+                        .param("sort", "id,asc")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Page number cannot be negative.")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenSizeIsZero() throws Exception {
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "0")
+                        .param("sort", "id,asc")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Page size must be at least 1.")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenDeleteIdIsZero() throws Exception {
+        mockMvc.perform(delete("/api/v1/employees/0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Employee ID must be positive.")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenGetIdIsZero() throws Exception {
+        mockMvc.perform(get("/api/v1/employees/0")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Employee ID must be positive.")));
+    }
+
+    @Test
+    void shouldReturnBadRequestWhenUpdateIdIsZero() throws Exception {
+        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "IT", BigDecimal.valueOf(50000));
+        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+
+        mockMvc.perform(put("/api/v1/employees/0")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(expectedResult))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string(containsString("Employee ID must be positive.")));
     }
 }

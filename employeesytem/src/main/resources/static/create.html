@@ -2,6 +2,18 @@
 <html>
 <head>
     <title>Create Employee</title>
+    <style>
+        .error { color: red; margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; font-weight: bold; }
+        input[type="text"], input[type="email"], input[type="number"], select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+        }
+    </style>
+    <script src="validation.js"></script>
 </head>
 <body>
 
@@ -9,38 +21,95 @@
 
 <h2>Create Employee</h2>
 
+<div id="generalError" class="error"></div>
+
 <form onsubmit="createEmployee(event)">
-    ID: <input type="number" id="id" /><br/><br/>
-    First Name: <input type="text" id="firstName" /><br/><br/>
-    Last Name: <input type="text" id="lastName" /><br/><br/>
-    Email: <input type="email" id="email" /><br/><br/>
-    Department: <input type="text" id="department" /><br/><br/>
-    Salary: <input type="number" id="salary" /><br/><br/>
+    <div class="form-group">
+        <label for="id">ID:</label>
+        <input type="number" id="id" required />
+        <div id="idError" class="error"></div>
+    </div>
+    <div class="form-group">
+        <label for="firstName">First Name:</label>
+        <input type="text" id="firstName" required />
+        <div id="firstNameError" class="error"></div>
+    </div>
+    <div class="form-group">
+        <label for="lastName">Last Name:</label>
+        <input type="text" id="lastName" required />
+        <div id="lastNameError" class="error"></div>
+    </div>
+    <div class="form-group">
+        <label for="email">Email:</label>
+        <input type="email" id="email" required />
+        <div id="emailError" class="error"></div>
+    </div>
+    <div class="form-group">
+        <label for="department">Department:</label>
+        <select id="department" required>
+            <option value="">-- Select Department --</option>
+            <option value="HR">HR</option>
+            <option value="IT">IT</option>
+            <option value="MARKETING">Marketing</option>
+            <option value="SALES">Sales</option>
+            <option value="FINANCE">Finance</option>
+        </select>
+        <div id="departmentError" class="error"></div>
+    </div>
+    <div class="form-group">
+        <label for="salary">Salary:</label>
+        <input type="number" id="salary" required min="1" step="0.01" />
+        <div id="salaryError" class="error"></div>
+    </div>
 
     <button type="submit">Save</button>
 </form>
 
 <script>
-    function createEmployee(e) {
+    async function createEmployee(e) {
         e.preventDefault();
+        document.getElementById("generalError").textContent = "";
+        resetErrors(); // Call reset from external file
 
         const employee = {
-            id: document.getElementById("id").value,
+            id: document.getElementById("id").value ? parseInt(document.getElementById("id").value) : null,
             firstName: document.getElementById("firstName").value,
             lastName: document.getElementById("lastName").value,
             email: document.getElementById("email").value,
             department: document.getElementById("department").value,
-            salary: document.getElementById("salary").value
+            salary: parseFloat(document.getElementById("salary").value)
         };
 
-        fetch("/api/v1/employees", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(employee)
-        }).then(() => {
-            alert("Employee created!");
-            window.location.href = "/index.html";
-        });
+        // 1. Run client-side validation
+        if (!validateEmployee(employee)) {
+            return; // Stop submission if client validation fails
+        }
+
+        // Ensure ID is not sent if it's meant to be auto-generated
+        if (employee.id === null) {
+            delete employee.id;
+        }
+
+        try {
+            const res = await fetch("/api/v1/employees", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(employee)
+            });
+
+            if (res.ok) {
+                alert("Employee created successfully!");
+                window.location.href = "/index.html";
+            } else {
+                // 2. Use external handler for all expected errors
+                const handled = await handleBackendValidationErrors(res);
+                if (!handled) {
+                     document.getElementById("generalError").textContent = `Error: ${res.statusText} (${res.status})`;
+                }
+            }
+        } catch (err) {
+            document.getElementById("generalError").textContent = "Network error or server unreachable.";
+        }
     }
 </script>
 
