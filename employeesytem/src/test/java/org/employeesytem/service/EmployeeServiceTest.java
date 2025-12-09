@@ -35,37 +35,36 @@ class EmployeeServiceTest {
     @InjectMocks
     private EmployeeService service;
 
-    private Employee expectedEmployee;
+    private Employee employee;
+    private PageRequest pageRequest;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
+        employee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "IT", new BigDecimal("123456"));
+        pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
     }
 
     @Test
     void shouldReturnAllEmployeesWhenFindAllEmployeesIsCalled() {
-        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
-        when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
+        when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
-        Page<Employee> allEmployees = service.findAllEmployees(pageRequest);
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, null);
         verify(repository, times(1)).findAll(pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
-        assertEquals(expectedEmployee, allEmployees.getContent().get(0));
+        assertEquals(employee, allEmployees.getContent().get(0));
     }
 
     @Test
     public void shouldAddAnEmployeeWhenTheIdIsUnique() {
-        when(repository.save(any(Employee.class))).thenReturn(expectedEmployee);
+        when(repository.save(any(Employee.class))).thenReturn(employee);
 
-        Employee actualEmployee = service.addEmployee(expectedEmployee);
-        assertEquals(expectedEmployee, actualEmployee);
+        Employee actualEmployee = service.addEmployee(employee);
+        assertEquals(employee, actualEmployee);
     }
 
     @Test
     void shouldThrowDuplicateEmployeeExceptionWhenIdAlreadyExists() {
-        Employee employee = new Employee(101, "Yousuf", "Shaik", "yousuf@gmail.com", "Dev", new BigDecimal("50000"));
-
         when(repository.save(employee))
                 .thenThrow(new IllegalArgumentException("Employee with id 101 already exists"));
 
@@ -78,10 +77,10 @@ class EmployeeServiceTest {
 
     @Test
     void shouldReturnTheEmployeesWhenIdExists() {
-        when(repository.findById(101)).thenReturn(Optional.of(expectedEmployee));
+        when(repository.findById(101)).thenReturn(Optional.of(employee));
 
         Employee actualEmployee = service.findByEmployeeId(101);
-        assertEquals(expectedEmployee, actualEmployee);
+        assertEquals(employee, actualEmployee);
     }
 
     @Test
@@ -99,7 +98,7 @@ class EmployeeServiceTest {
 
     @Test
     void shouldUpdateEmployeeWhenIdExists() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
+        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "IT", new BigDecimal("123456"));
 
         when(repository.save(expectedEmployee)).thenReturn(expectedEmployee);
 
@@ -109,7 +108,7 @@ class EmployeeServiceTest {
 
     @Test
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExistsForUpdate() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
+        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "IT", new BigDecimal("123456"));
 
         when(repository.save(expectedEmployee))
                 .thenThrow(new EmployeeNotFoundException("Employee with ID 101 not found"));
@@ -152,5 +151,27 @@ class EmployeeServiceTest {
 
         Long actualCount = service.getEmployeeCount();
         assertEquals(10, actualCount);
+    }
+
+    @Test
+    void shouldReturnAllNameMatchedEmployeesWhenNameParameterIsNotNull() {
+        String name = "Yousuf";
+        when(repository.findByCriteria(name, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name);
+        verify(repository, times(1)).findByCriteria(name, pageRequest);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(employee, allEmployees.getContent().get(0));
+    }
+
+    @Test
+    void shouldReturnAllEmployeesWhenNameIsEmpty() {
+        String name = " ";
+        when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name);
+        verify(repository, times(1)).findAll(pageRequest);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(employee, allEmployees.getContent().get(0));
     }
 }

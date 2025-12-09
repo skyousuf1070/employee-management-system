@@ -87,4 +87,10 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
     public Long count() {
         return jdbc.queryForObject("SELECT COUNT(*) FROM employee", Long.class);
     }
+
+    // To-do: Implement this
+    @Override
+    public Page<Employee> findByCriteria(String name, Pageable pageable) {
+        return null;
+    }
 }

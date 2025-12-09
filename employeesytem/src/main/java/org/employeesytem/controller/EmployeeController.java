@@ -39,9 +39,10 @@ public class EmployeeController {
             @Min(value = 0, message = "Page number cannot be negative.") int page,
             @RequestParam(defaultValue = "5")
             @Min(value = 1, message = "Page size must be at least 1.") int size,
+            @RequestParam(required = false) String name,
             Sort sort) {
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<Employee> allEmployees = employeeService.findAllEmployees(pageRequest);
+        Page<Employee> allEmployees = employeeService.findAllEmployees(pageRequest, name);
         return ResponseEntity.ok(allEmployees);
     }
 

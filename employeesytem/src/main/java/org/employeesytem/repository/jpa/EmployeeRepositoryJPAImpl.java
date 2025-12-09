@@ -42,4 +42,9 @@ public class EmployeeRepositoryJPAImpl implements EmployeeRepository {
     public Long count() {
         return jpa.count();
     }
+
+    @Override
+    public Page<Employee> findByCriteria(String name, Pageable pageable) {
+        return jpa.findByCriteria(name, pageable);
+    }
 }

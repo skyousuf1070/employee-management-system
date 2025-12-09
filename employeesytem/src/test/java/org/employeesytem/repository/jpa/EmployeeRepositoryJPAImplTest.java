@@ -20,6 +20,7 @@ import java.util.Optional;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
@@ -33,52 +34,52 @@ class EmployeeRepositoryJPAImplTest {
     @Mock
     EmployeeJPARepository jpa;
 
+    private Employee employee;
+    private PageRequest pageRequest;
+
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
+        employee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "IT", new BigDecimal("123456"));
+        pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
     }
 
     @Test
     void shouldReturnAllEmployeesWhenFindAllIsCalled() {
-        PageRequest pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jpa.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(expectedEmployee)));
+        when(jpa.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
         Page<Employee> all = repository.findAll(pageRequest);
 
         assertEquals(1, all.getTotalElements());
-        assertEquals(expectedEmployee, all.getContent().get(0));
+        assertEquals(employee, all.getContent().get(0));
         verify(jpa).findAll(pageRequest);
     }
 
     @Test
     void shouldSaveTheEmployeeSuccessfullyWhenTheIdIsUnique() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jpa.save(expectedEmployee)).thenReturn(expectedEmployee);
+        when(jpa.save(employee)).thenReturn(employee);
 
-        Employee actualEmployee = repository.save(expectedEmployee);
+        Employee actualEmployee = repository.save(employee);
 
-        assertEquals(expectedEmployee, actualEmployee);
-        verify(jpa).save(expectedEmployee);
+        assertEquals(employee, actualEmployee);
+        verify(jpa).save(employee);
     }
 
     @Test
     void shouldThrowTheExceptionWhenTheIdExists() {
-        Employee duplicateEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jpa.save(duplicateEmployee)).thenThrow(new DuplicateKeyException("Duplicate entry for id"));
+        when(jpa.save(employee)).thenThrow(new DuplicateKeyException("Duplicate entry for id"));
 
         DuplicateKeyException exception = assertThrows(DuplicateKeyException.class,
-                () -> repository.save(duplicateEmployee));
+                () -> repository.save(employee));
 
         assertTrue(exception.getMessage().contains("Duplicate entry for id"));
     }
 
     @Test
     void shouldReturnEmployeeWhenIdExists() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "Dev", new BigDecimal("123456"));
-        when(jpa.findById(101)).thenReturn(Optional.of(expectedEmployee));
+        when(jpa.findById(101)).thenReturn(Optional.of(employee));
         Optional<Employee> actualEmployee = repository.findById(101);
-        actualEmployee.ifPresent(employee -> assertEquals(expectedEmployee, employee));
+        actualEmployee.ifPresent(employee1 -> assertEquals(employee1, employee));
     }
 
     @Test
@@ -90,33 +91,27 @@ class EmployeeRepositoryJPAImplTest {
 
     @Test
     void shouldUpdateEmployeeWhenIdExists() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
+        when(jpa.save(employee)).thenReturn(employee);
 
-        when(jpa.save(expectedEmployee)).thenReturn(expectedEmployee);
-
-        Employee actualEmployee = repository.save(expectedEmployee);
-        assertEquals(expectedEmployee, actualEmployee);
+        Employee actualEmployee = repository.save(employee);
+        assertEquals(employee, actualEmployee);
     }
 
     @Test
     void shouldThrowRuntimeExceptionWhenTheUpdateFails() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
-
-        when(jpa.save(expectedEmployee)).thenThrow(new RuntimeException("Failed to update employee with ID 101"));
+        when(jpa.save(employee)).thenThrow(new RuntimeException("Failed to update employee with ID 101"));
 
         RuntimeException exception = assertThrows(RuntimeException.class,
-                () -> repository.save(expectedEmployee));
+                () -> repository.save(employee));
         assertTrue(exception.getMessage().contains("Failed to update employee with ID"));
     }
 
     @Test
     void shouldThrowEmployeeNotFoundExceptionWhenIdNotExists() {
-        Employee expectedEmployee = new Employee(101, "Yousuf", "Shaik", "yousuf.new@gmail.com", "Dev", new BigDecimal("123456"));
-
-        when(jpa.save(expectedEmployee)).thenThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found"));
+        when(jpa.save(employee)).thenThrow(new EmployeeNotFoundException("Employee with " + 101 + " not found"));
 
         EmployeeNotFoundException exception = assertThrows(EmployeeNotFoundException.class,
-                () -> repository.save(expectedEmployee));
+                () -> repository.save(employee));
         assertTrue(exception.getMessage().contains("not found"));
     }
 
@@ -157,5 +152,17 @@ class EmployeeRepositoryJPAImplTest {
 
         assertEquals(10, count);
         verify(jpa).count();
+    }
+
+    @Test
+    void shouldReturnAllNameMatchedEmployeesWhenNameIsNotNull() {
+        String name = "Yousuf";
+        when(jpa.findByCriteria(name, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> all = repository.findByCriteria(name, pageRequest);
+
+        assertEquals(1, all.getTotalElements());
+        assertEquals(employee, all.getContent().get(0));
+        verify(jpa, times(1)).findByCriteria(name, pageRequest);
     }
 }

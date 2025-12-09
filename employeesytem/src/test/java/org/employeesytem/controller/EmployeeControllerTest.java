@@ -5,6 +5,7 @@ import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.service.EmployeeService;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -23,6 +24,7 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -48,9 +50,16 @@ public class EmployeeControllerTest {
     @MockBean
     private EmployeeService employeeService;
 
+    private Employee employee;
+
+    @BeforeEach
+    public void setUp() {
+        employee = new Employee(101, "Yousuf", "Shaik", "yousuf@gmail.com", "IT", new BigDecimal("123456"));
+    }
+
     @Test
     public void shouldReturnZeroEmployees() throws Exception {
-        when(employeeService.findAllEmployees(any(Pageable.class))).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(employeeService.findAllEmployees(any(Pageable.class), eq(null))).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
@@ -64,7 +73,7 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$.page.totalElements").value(0));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture());
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), eq(null));
         Pageable capturedPageable = pageableCaptor.getValue();
         assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
         assertThat(capturedPageable.getPageSize()).isEqualTo(5);
@@ -76,11 +85,10 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnAllEmployees() throws Exception {
-        Employee employee1 = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev", BigDecimal.valueOf(50000));
-        Employee employee2 = new Employee(2, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
-        List<Employee> mockEmployees = List.of(employee1, employee2);
+        Employee employee2 = new Employee(102, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
+        List<Employee> mockEmployees = List.of(employee, employee2);
 
-        when(employeeService.findAllEmployees(any(Pageable.class))).thenReturn(new PageImpl<>((mockEmployees)));
+        when(employeeService.findAllEmployees(any(Pageable.class), eq(null))).thenReturn(new PageImpl<>((mockEmployees)));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
@@ -91,16 +99,16 @@ public class EmployeeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].id").value(1))
-                .andExpect(jsonPath("$.content[0].firstName").value("Alice"))
-                .andExpect(jsonPath("$.content[0].lastName").value("A"))
-                .andExpect(jsonPath("$.content[0].email").value("abc@gmail.com"))
-                .andExpect(jsonPath("$.content[0].department").value("Dev"))
-                .andExpect(jsonPath("$.content[0].salary").value("50000"))
+                .andExpect(jsonPath("$.content[0].id").value(101))
+                .andExpect(jsonPath("$.content[0].firstName").value("Yousuf"))
+                .andExpect(jsonPath("$.content[0].lastName").value("Shaik"))
+                .andExpect(jsonPath("$.content[0].email").value("yousuf@gmail.com"))
+                .andExpect(jsonPath("$.content[0].department").value("IT"))
+                .andExpect(jsonPath("$.content[0].salary").value("123456"))
                 .andExpect(jsonPath("$.page.totalElements").value(2));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture());
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), eq(null));
         Pageable capturedPageable = pageableCaptor.getValue();
         assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
         assertThat(capturedPageable.getPageSize()).isEqualTo(5);
@@ -112,10 +120,9 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldAddAnEmployeeWhenTheIdIsUnique() throws Exception {
-        Employee savedEmployee = new Employee(101, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
-        String expectedJson = objectMapper.writeValueAsString(savedEmployee);
+        String expectedJson = objectMapper.writeValueAsString(employee);
 
-        when(employeeService.addEmployee(any(Employee.class))).thenReturn(savedEmployee);
+        when(employeeService.addEmployee(any(Employee.class))).thenReturn(employee);
 
         mockMvc.perform(post("/api/v1/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -126,13 +133,9 @@ public class EmployeeControllerTest {
 
     @Test
     void shouldReturnConflictWhenEmployeeAlreadyExists() throws Exception {
-        Employee existingEmployee = new Employee(101, "Yousuf", "Shaik",
-                "yousuf@gmail.com", "IT", new BigDecimal("123456"));
+        String jsonRequest = objectMapper.writeValueAsString(employee);
 
-        String jsonRequest = objectMapper.writeValueAsString(existingEmployee);
-
-        when(employeeService.addEmployee(existingEmployee))
-                .thenThrow(new DuplicateEmployeeException("Employee with id 101 already exists"));
+        when(employeeService.addEmployee(employee)).thenThrow(new DuplicateEmployeeException("Employee with id 101 already exists"));
 
         mockMvc.perform(post("/api/v1/employees")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -143,10 +146,9 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnEmployeeWhenIdExists() throws Exception {
-        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc@gmail.com", "Dev", BigDecimal.valueOf(50000));
-        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+        String expectedResult = objectMapper.writeValueAsString(employee);
 
-        when(employeeService.findByEmployeeId(1)).thenReturn(expectedEmployee);
+        when(employeeService.findByEmployeeId(1)).thenReturn(employee);
 
         mockMvc.perform(get("/api/v1/employees/1")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -245,7 +247,7 @@ public class EmployeeControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenEmployeeValidationFails() throws Exception {
-       Employee invalidEmployee = new Employee(1, "", "", "bademail", "", null);
+        Employee invalidEmployee = new Employee(1, "", "", "bademail", "", null);
         String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
 
         mockMvc.perform(post("/api/v1/employees")
@@ -261,7 +263,7 @@ public class EmployeeControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenSalaryIsLessThanOrEqualZero() throws Exception {
-       Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "yousuf@gmail.com", "Dev", BigDecimal.ZERO);
+        Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "yousuf@gmail.com", "IT", BigDecimal.ZERO);
         String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
 
         mockMvc.perform(post("/api/v1/employees")
@@ -273,7 +275,7 @@ public class EmployeeControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenBadEmailIsPassed() throws Exception {
-       Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "bademail", "Dev", BigDecimal.valueOf(100000));
+        Employee invalidEmployee = new Employee(1, "Yousuf", "Baba", "bademail", "IT", BigDecimal.valueOf(100000));
         String jsonRequest = objectMapper.writeValueAsString(invalidEmployee);
 
         mockMvc.perform(post("/api/v1/employees")
@@ -350,13 +352,40 @@ public class EmployeeControllerTest {
 
     @Test
     void shouldReturnBadRequestWhenUpdateIdIsZero() throws Exception {
-        Employee expectedEmployee = new Employee(1, "Alice", "A", "abc.new@gmail.com", "IT", BigDecimal.valueOf(50000));
-        String expectedResult = objectMapper.writeValueAsString(expectedEmployee);
+        String expectedResult = objectMapper.writeValueAsString(employee);
 
         mockMvc.perform(put("/api/v1/employees/0")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(expectedResult))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string(containsString("Employee ID must be positive.")));
+    }
+
+    @Test
+    public void shouldReturnAllNameMatchedEmployeesWhenNameIsPassed() throws Exception {
+        Employee employee1 = new Employee(1, "Yousuf", "A", "abc@gmail.com", "IT", BigDecimal.valueOf(50000));
+        Employee employee2 = new Employee(2, "Shaik Yousuf Baba", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
+        List<Employee> mockEmployees = List.of(employee1, employee2);
+
+        when(employeeService.findAllEmployees(any(Pageable.class), eq("Yousuf"))).thenReturn(new PageImpl<>((mockEmployees)));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .param("name", "Yousuf")
+                        .param("sort", "firstName,asc")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].firstName").value("Yousuf"))
+                .andExpect(jsonPath("$.content[0].lastName").value("A"))
+                .andExpect(jsonPath("$.content[0].email").value("abc@gmail.com"))
+                .andExpect(jsonPath("$.content[0].department").value("IT"))
+                .andExpect(jsonPath("$.content[0].salary").value("50000"))
+                .andExpect(jsonPath("$.page.totalElements").value(2));
+        verify(employeeService, times(1)).findAllEmployees(any(Pageable.class), eq("Yousuf"));
     }
 }

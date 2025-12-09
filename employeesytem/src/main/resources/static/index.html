@@ -15,12 +15,22 @@
             margin-bottom: 20px;
         }
 
-        /* Controls Container for Sorting */
+        /* Controls Container for Sorting and Search */
         .controls-container {
             display: flex;
             justify-content: flex-start;
+            flex-wrap: wrap; /* Added for better layout if many controls are present */
             gap: 20px;
             margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee; /* Visual separator */
+        }
+
+        /* New class for search group */
+        .search-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
         }
 
         /* Pagination Styles */
@@ -54,6 +64,12 @@
 <h2>Employees List</h2>
 
 <div class="controls-container">
+
+    <div class="search-group">
+        <label for="searchQuery">Search Name:</label>
+        <input type="text" id="searchQuery" placeholder="Enter name..." />
+        <button onclick="loadEmployees(0)">Apply Filter</button>
+    </div>
     <label for="sortField">Sort By:</label>
     <select id="sortField" onchange="loadEmployees(0)">
         <option value="id">ID</option>
@@ -101,10 +117,16 @@
             // 1. GET SORTING VALUE and build the sort parameter
             const sortField = document.getElementById("sortField").value;
             const sortDirection = document.getElementById("sortDirection").value;
-            const sortParam = `&sort=${sortField},${sortDirection}`;
+            const searchQuery = document.getElementById("searchQuery").value.trim();
 
-            // 2. CONSTRUCT the full URL
-            const url = `/api/v1/employees?page=${currentPage}&size=${pageSize}${sortParam}`;
+            const params = [];
+            params.push(`page=${currentPage}`);
+            params.push(`size=${pageSize}`);
+            params.push(`sort=${sortField},${sortDirection}`);
+            if (searchQuery) {
+                params.push(`name=${encodeURIComponent(searchQuery)}`);
+            }
+            const url = `/api/v1/employees?${params.join('&')}`;
 
             // 3. Fetch data
             const res = await fetch(url);
@@ -115,10 +137,15 @@
 
             // 4. EXTRACT DATA
             const employees = data.content || [];
-            const pageMeta = data.page || { totalPages: 1, totalElements: 0, number: 0 };
+            const pageMeta = data.page || {};
+
+            // Use safe access on pageMeta, defaulting to 0 or 1 for safety
+            const totalElements = pageMeta.totalElements ?? 0;
+            const totalPagesCount = pageMeta.totalPages ?? 1;
+            const currentPageNumber = pageMeta.number ?? 0;
 
             // Update Total Pages global variable
-            totalPages = pageMeta.totalPages;
+            totalPages = totalPagesCount;
 
             // 5. RENDER TABLE
             let rows = "";
@@ -143,8 +170,8 @@
             document.querySelector("#employeeTable tbody").innerHTML = rows;
 
             // 6. UPDATE UI INFO (Total count and Page X of Y)
-            document.getElementById("empCount").innerText = pageMeta.totalElements;
-            document.getElementById("pageInfo").innerText = `Page ${pageMeta.number + 1} of ${pageMeta.totalPages}`;
+            document.getElementById("empCount").innerText = totalElements;
+            document.getElementById("pageInfo").innerText = `Page ${currentPageNumber + 1} of ${totalPagesCount || 1}`;
 
             // 7. ENABLE/DISABLE BUTTONS
             updatePaginationButtons();
@@ -152,6 +179,8 @@
         } catch (error) {
             console.error("Error loading employees:", error);
             document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            document.getElementById("empCount").innerText = 0; // Set count to 0 on error
+            document.getElementById("pageInfo").innerText = `Page 1 of 1`; // Reset page info on error
         }
     }
 

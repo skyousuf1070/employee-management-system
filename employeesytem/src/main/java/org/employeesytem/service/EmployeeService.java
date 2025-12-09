@@ -18,8 +18,11 @@ public class EmployeeService {
         this.repository = repository;
     }
 
-    public Page<Employee> findAllEmployees(Pageable pageable) {
-        return repository.findAll(pageable);
+    public Page<Employee> findAllEmployees(Pageable pageable, String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return repository.findAll(pageable);
+        }
+        return repository.findByCriteria(name.trim(), pageable);
     }
 
     public Employee addEmployee(Employee employee) {
