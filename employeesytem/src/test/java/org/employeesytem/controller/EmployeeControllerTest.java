@@ -25,6 +25,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doThrow;
@@ -59,7 +60,7 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnZeroEmployees() throws Exception {
-        when(employeeService.findAllEmployees(any(Pageable.class), eq(null))).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(employeeService.findAllEmployees(any(Pageable.class), isNull(), isNull())).thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
@@ -73,7 +74,7 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$.page.totalElements").value(0));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), eq(null));
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), isNull(), isNull());
         Pageable capturedPageable = pageableCaptor.getValue();
         assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
         assertThat(capturedPageable.getPageSize()).isEqualTo(5);
@@ -88,7 +89,7 @@ public class EmployeeControllerTest {
         Employee employee2 = new Employee(102, "Bob", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
         List<Employee> mockEmployees = List.of(employee, employee2);
 
-        when(employeeService.findAllEmployees(any(Pageable.class), eq(null))).thenReturn(new PageImpl<>((mockEmployees)));
+        when(employeeService.findAllEmployees(any(Pageable.class), isNull(), isNull())).thenReturn(new PageImpl<>((mockEmployees)));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
@@ -108,7 +109,7 @@ public class EmployeeControllerTest {
                 .andExpect(jsonPath("$.page.totalElements").value(2));
 
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), eq(null));
+        verify(employeeService, times(1)).findAllEmployees(pageableCaptor.capture(), isNull(), isNull());
         Pageable capturedPageable = pageableCaptor.getValue();
         assertThat(capturedPageable.getPageNumber()).isEqualTo(0);
         assertThat(capturedPageable.getPageSize()).isEqualTo(5);
@@ -363,11 +364,10 @@ public class EmployeeControllerTest {
 
     @Test
     public void shouldReturnAllNameMatchedEmployeesWhenNameIsPassed() throws Exception {
-        Employee employee1 = new Employee(1, "Yousuf", "A", "abc@gmail.com", "IT", BigDecimal.valueOf(50000));
-        Employee employee2 = new Employee(2, "Shaik Yousuf Baba", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
-        List<Employee> mockEmployees = List.of(employee1, employee2);
+        Employee employee2 = new Employee(102, "Shaik Yousuf Baba", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000));
+        List<Employee> mockEmployees = List.of(employee, employee2);
 
-        when(employeeService.findAllEmployees(any(Pageable.class), eq("Yousuf"))).thenReturn(new PageImpl<>((mockEmployees)));
+        when(employeeService.findAllEmployees(any(Pageable.class), eq("Yousuf"), isNull())).thenReturn(new PageImpl<>((mockEmployees)));
 
         mockMvc.perform(get("/api/v1/employees")
                         .param("page", "0")
@@ -379,13 +379,52 @@ public class EmployeeControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(jsonPath("$.content").isArray())
-                .andExpect(jsonPath("$.content[0].id").value(1))
+                .andExpect(jsonPath("$.content[0].id").value(101))
                 .andExpect(jsonPath("$.content[0].firstName").value("Yousuf"))
-                .andExpect(jsonPath("$.content[0].lastName").value("A"))
-                .andExpect(jsonPath("$.content[0].email").value("abc@gmail.com"))
+                .andExpect(jsonPath("$.content[0].lastName").value("Shaik"))
+                .andExpect(jsonPath("$.content[0].email").value("yousuf@gmail.com"))
                 .andExpect(jsonPath("$.content[0].department").value("IT"))
-                .andExpect(jsonPath("$.content[0].salary").value("50000"))
+                .andExpect(jsonPath("$.content[0].salary").value("123456"))
                 .andExpect(jsonPath("$.page.totalElements").value(2));
-        verify(employeeService, times(1)).findAllEmployees(any(Pageable.class), eq("Yousuf"));
+        verify(employeeService, times(1)).findAllEmployees(any(Pageable.class), eq("Yousuf"), isNull());
+    }
+
+    @Test
+    public void shouldReturnAllDepartmentMatchedEmployeesWhenDepartmentIsPassed() throws Exception {
+        Employee employee2 = new Employee(102, "Laddu", "B", "bca@gmail.com", "IT", BigDecimal.valueOf(100000));
+        List<Employee> mockEmployees = List.of(employee, employee2);
+
+        when(employeeService.findAllEmployees(any(Pageable.class), isNull(), eq("IT"))).thenReturn(new PageImpl<>((mockEmployees)));
+
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .param("department", "IT")
+                        .param("sort", "firstName,asc")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.content").isArray())
+                .andExpect(jsonPath("$.content[0].id").value(101))
+                .andExpect(jsonPath("$.content[0].firstName").value("Yousuf"))
+                .andExpect(jsonPath("$.content[0].lastName").value("Shaik"))
+                .andExpect(jsonPath("$.content[0].email").value("yousuf@gmail.com"))
+                .andExpect(jsonPath("$.content[0].department").value("IT"))
+                .andExpect(jsonPath("$.content[0].salary").value("123456"))
+                .andExpect(jsonPath("$.page.totalElements").value(2));
+        verify(employeeService, times(1)).findAllEmployees(any(Pageable.class), isNull(), eq("IT"));
+    }
+
+    @Test
+    void shouldReturnBadRequestForInvalidDepartmentParam() throws Exception {
+        mockMvc.perform(get("/api/v1/employees")
+                        .param("page", "0")
+                        .param("size", "5")
+                        .param("department", "HOUSEKEEPING")
+                        .param("sort", "firstName,asc")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(content().string("Department must be one of: HR, IT, MARKETING, SALES, FINANCE"));
     }
 }

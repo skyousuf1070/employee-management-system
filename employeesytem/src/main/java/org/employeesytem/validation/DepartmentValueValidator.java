@@ -21,7 +21,7 @@ public class DepartmentValueValidator implements ConstraintValidator<DepartmentV
     @Override
     public boolean isValid(String value, ConstraintValidatorContext context) {
         if (value == null || value.trim().isEmpty()) {
-            return false;
+            return true;
         }
         boolean isValidValue = Stream.of(Department.values())
                 .anyMatch(department -> value.toUpperCase().equals(department.name()));

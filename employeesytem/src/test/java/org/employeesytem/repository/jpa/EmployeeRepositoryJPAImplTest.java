@@ -157,12 +157,24 @@ class EmployeeRepositoryJPAImplTest {
     @Test
     void shouldReturnAllNameMatchedEmployeesWhenNameIsNotNull() {
         String name = "Yousuf";
-        when(jpa.findByCriteria(name, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+        when(jpa.findByCriteria(name, null,pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
-        Page<Employee> all = repository.findByCriteria(name, pageRequest);
+        Page<Employee> all = repository.findByCriteria(name, null, pageRequest);
 
         assertEquals(1, all.getTotalElements());
         assertEquals(employee, all.getContent().get(0));
-        verify(jpa, times(1)).findByCriteria(name, pageRequest);
+        verify(jpa, times(1)).findByCriteria(name, null, pageRequest);
+    }
+
+    @Test
+    void shouldReturnAllDepartmentMatchedEmployeesWhenDepartmentIsNotNull() {
+        String department = "IT";
+        when(jpa.findByCriteria(null, department,pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> all = repository.findByCriteria(null, department, pageRequest);
+
+        assertEquals(1, all.getTotalElements());
+        assertEquals(employee, all.getContent().get(0));
+        verify(jpa, times(1)).findByCriteria(null, department, pageRequest);
     }
 }

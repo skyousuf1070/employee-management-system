@@ -9,6 +9,8 @@ import org.springframework.data.repository.query.Param;
 
 public interface EmployeeJPARepository extends JpaRepository<Employee, Integer> {
     @Query("SELECT e FROM Employee e WHERE " +
-            "(:name IS NULL OR LOWER(e.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(e.lastName) LIKE LOWER(CONCAT('%', :name, '%')))")
-    Page<Employee> findByCriteria(@Param("name") String name, Pageable pageable);
+            "(:name IS NULL OR LOWER(e.firstName) LIKE LOWER(CONCAT('%', :name, '%')) OR LOWER(e.lastName) LIKE LOWER(CONCAT('%', :name, '%')))" +
+            "AND (:department IS NULL OR LOWER(e.department) = LOWER(:department))")
+    Page<Employee> findByCriteria(@Param("name") String name,
+                                  @Param("department") String department, Pageable pageable);
 }

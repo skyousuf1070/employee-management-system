@@ -4,6 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import org.employeesytem.dto.Employee;
 import org.employeesytem.service.EmployeeService;
+import org.employeesytem.validation.DepartmentValue;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -40,9 +41,10 @@ public class EmployeeController {
             @RequestParam(defaultValue = "5")
             @Min(value = 1, message = "Page size must be at least 1.") int size,
             @RequestParam(required = false) String name,
+            @RequestParam(required = false) @DepartmentValue String department,
             Sort sort) {
         PageRequest pageRequest = PageRequest.of(page, size, sort);
-        Page<Employee> allEmployees = employeeService.findAllEmployees(pageRequest, name);
+        Page<Employee> allEmployees = employeeService.findAllEmployees(pageRequest, name, department);
         return ResponseEntity.ok(allEmployees);
     }
 

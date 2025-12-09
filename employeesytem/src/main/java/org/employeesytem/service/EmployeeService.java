@@ -7,6 +7,7 @@ import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.Optional;
 
@@ -18,11 +19,13 @@ public class EmployeeService {
         this.repository = repository;
     }
 
-    public Page<Employee> findAllEmployees(Pageable pageable, String name) {
-        if (name == null || name.trim().isEmpty()) {
+    public Page<Employee> findAllEmployees(Pageable pageable, String name, String department) {
+        String nameFilter = StringUtils.hasText(name) ? name.trim() : null;
+        String departmentFilter = StringUtils.hasText(department) ? department.trim() : null;
+        if (nameFilter == null && departmentFilter == null) {
             return repository.findAll(pageable);
         }
-        return repository.findByCriteria(name.trim(), pageable);
+        return repository.findByCriteria(nameFilter, departmentFilter, pageable);
     }
 
     public Employee addEmployee(Employee employee) {

@@ -49,7 +49,7 @@ class EmployeeServiceTest {
     void shouldReturnAllEmployeesWhenFindAllEmployeesIsCalled() {
         when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
-        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, null);
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, null, null);
         verify(repository, times(1)).findAll(pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
         assertEquals(employee, allEmployees.getContent().get(0));
@@ -156,10 +156,10 @@ class EmployeeServiceTest {
     @Test
     void shouldReturnAllNameMatchedEmployeesWhenNameParameterIsNotNull() {
         String name = "Yousuf";
-        when(repository.findByCriteria(name, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+        when(repository.findByCriteria(name, null, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
-        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name);
-        verify(repository, times(1)).findByCriteria(name, pageRequest);
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name, null);
+        verify(repository, times(1)).findByCriteria(name, null, pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
         assertEquals(employee, allEmployees.getContent().get(0));
     }
@@ -169,8 +169,41 @@ class EmployeeServiceTest {
         String name = " ";
         when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
-        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name);
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name, null);
         verify(repository, times(1)).findAll(pageRequest);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(employee, allEmployees.getContent().get(0));
+    }
+
+    @Test
+    void shouldReturnAllDepartmentMatchedEmployeesWhenDepartmentParameterIsNotNull() {
+        String department = "IT";
+        when(repository.findByCriteria(null, department, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, null, department);
+        verify(repository, times(1)).findByCriteria(null, department, pageRequest);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(employee, allEmployees.getContent().get(0));
+    }
+
+    @Test
+    void shouldReturnAllEmployeesWhenDepartmentIsEmpty() {
+        String department = " ";
+        when(repository.findAll(pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, null, department);
+        verify(repository, times(1)).findAll(pageRequest);
+        assertEquals(1, allEmployees.getTotalElements());
+        assertEquals(employee, allEmployees.getContent().get(0));
+    }
+
+    @Test
+    void shouldReturnAllNameAndDepartmentMatchedEmployeesWhenBothNameAndDepartmentParametersAreNotNull() {
+        String name = "Yousuf", department = "IT";
+        when(repository.findByCriteria(name, department, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+
+        Page<Employee> allEmployees = service.findAllEmployees(pageRequest, name, department);
+        verify(repository, times(1)).findByCriteria(name, department, pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
         assertEquals(employee, allEmployees.getContent().get(0));
     }

@@ -8,11 +8,12 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
 
 import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 @Documented
 @Constraint(validatedBy = DepartmentValueValidator.class)
-@Target({FIELD})
+@Target({PARAMETER, FIELD})
 @Retention(RUNTIME)
 public @interface DepartmentValue {
     String message() default "Department must be one of: HR, IT, MARKETING, SALES, FINANCE";

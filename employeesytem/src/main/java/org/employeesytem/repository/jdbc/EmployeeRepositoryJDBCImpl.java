@@ -90,7 +90,7 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
 
     // To-do: Implement this
     @Override
-    public Page<Employee> findByCriteria(String name, Pageable pageable) {
+    public Page<Employee> findByCriteria(String name, String department, Pageable pageable) {
         return null;
     }
 }

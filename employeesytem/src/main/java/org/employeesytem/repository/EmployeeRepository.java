@@ -17,5 +17,5 @@ public interface EmployeeRepository {
 
     Long count();
 
-    Page<Employee> findByCriteria(String name, Pageable pageable);
+    Page<Employee> findByCriteria(String name, String department, Pageable pageable);
 }

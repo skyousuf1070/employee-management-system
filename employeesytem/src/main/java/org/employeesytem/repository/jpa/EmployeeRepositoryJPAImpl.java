@@ -44,7 +44,7 @@ public class EmployeeRepositoryJPAImpl implements EmployeeRepository {
     }
 
     @Override
-    public Page<Employee> findByCriteria(String name, Pageable pageable) {
-        return jpa.findByCriteria(name, pageable);
+    public Page<Employee> findByCriteria(String name, String department, Pageable pageable) {
+        return jpa.findByCriteria(name, department,pageable);
     }
 }
