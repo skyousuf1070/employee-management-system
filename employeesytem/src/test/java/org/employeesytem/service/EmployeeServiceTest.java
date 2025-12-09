@@ -37,12 +37,14 @@ class EmployeeServiceTest {
 
     private Employee employee;
     private PageRequest pageRequest;
+    private Sort sort;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         employee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "IT", new BigDecimal("123456"));
-        pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+        sort = Sort.by("firstName").ascending();
+        pageRequest = PageRequest.of(0, 5, sort);
     }
 
     @Test
@@ -206,5 +208,26 @@ class EmployeeServiceTest {
         verify(repository, times(1)).findByCriteria(name, department, pageRequest);
         assertEquals(1, allEmployees.getTotalElements());
         assertEquals(employee, allEmployees.getContent().get(0));
+    }
+
+    @Test
+    void shouldReturnAllEmployeesWhenFindAllEmployeesForExportIsCalled() {
+        when(repository.findAll(sort)).thenReturn(List.of(employee));
+
+        List<Employee> allEmployees = service.findAllEmployeesForExport(null, null, sort);
+        verify(repository, times(1)).findAll(sort);
+        assertEquals(1, allEmployees.size());
+        assertEquals(employee, allEmployees.get(0));
+    }
+
+    @Test
+    void shouldReturnAllEmployeesWhenBothNameAndDepartmentParametersArePassedToExport() {
+        String name = "Yousuf", department = "IT";
+        when(repository.findByCriteriaForExport(name, department, sort)).thenReturn(List.of(employee));
+
+        List<Employee> allEmployees = service.findAllEmployeesForExport(name, department, sort);
+        verify(repository, times(1)).findByCriteriaForExport(name, department, sort);
+        assertEquals(1, allEmployees.size());
+        assertEquals(employee, allEmployees.get(0));
     }
 }

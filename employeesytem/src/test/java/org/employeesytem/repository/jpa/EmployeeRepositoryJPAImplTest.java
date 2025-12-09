@@ -36,12 +36,14 @@ class EmployeeRepositoryJPAImplTest {
 
     private Employee employee;
     private PageRequest pageRequest;
+    private Sort sort;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
         employee = new Employee(101, "Yousuf", "Shaik", "yousufbabashaik@gmail.com", "IT", new BigDecimal("123456"));
-        pageRequest = PageRequest.of(0, 5, Sort.by("firstName").ascending());
+        sort = Sort.by("firstName").ascending();
+        pageRequest = PageRequest.of(0, 5, sort);
     }
 
     @Test
@@ -157,7 +159,7 @@ class EmployeeRepositoryJPAImplTest {
     @Test
     void shouldReturnAllNameMatchedEmployeesWhenNameIsNotNull() {
         String name = "Yousuf";
-        when(jpa.findByCriteria(name, null,pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+        when(jpa.findByCriteria(name, null, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
         Page<Employee> all = repository.findByCriteria(name, null, pageRequest);
 
@@ -169,12 +171,59 @@ class EmployeeRepositoryJPAImplTest {
     @Test
     void shouldReturnAllDepartmentMatchedEmployeesWhenDepartmentIsNotNull() {
         String department = "IT";
-        when(jpa.findByCriteria(null, department,pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
+        when(jpa.findByCriteria(null, department, pageRequest)).thenReturn(new PageImpl<>(List.of(employee)));
 
         Page<Employee> all = repository.findByCriteria(null, department, pageRequest);
 
         assertEquals(1, all.getTotalElements());
         assertEquals(employee, all.getContent().get(0));
         verify(jpa, times(1)).findByCriteria(null, department, pageRequest);
+    }
+
+    @Test
+    void shouldReturnAllListOfEmployeesWhenFindAllIsCalledWithoutPaginationRequest() {
+        when(jpa.findAll(sort)).thenReturn(List.of(employee));
+
+        List<Employee> all = repository.findAll(sort);
+
+        assertEquals(1, all.size());
+        assertEquals(employee, all.get(0));
+        verify(jpa).findAll(sort);
+    }
+
+    @Test
+    void shouldReturnAllDepartmentMatchedEmployeesWhenDepartmentIsPassedForExport() {
+        String department = "IT";
+        when(jpa.findByCriteriaForExport(null, department, sort)).thenReturn((List.of(employee)));
+
+        List<Employee> all = repository.findByCriteriaForExport(null, department, sort);
+
+        assertEquals(1, all.size());
+        assertEquals(employee, all.get(0));
+        verify(jpa, times(1)).findByCriteriaForExport(null, department, sort);
+    }
+
+    @Test
+    void shouldReturnAllNameMatchedEmployeesWhenNameIsPassedForExport() {
+        String name = "Yousuf";
+        when(jpa.findByCriteriaForExport(name, null, sort)).thenReturn((List.of(employee)));
+
+        List<Employee> all = repository.findByCriteriaForExport(name, null, sort);
+
+        assertEquals(1, all.size());
+        assertEquals(employee, all.get(0));
+        verify(jpa, times(1)).findByCriteriaForExport(name, null, sort);
+    }
+
+    @Test
+    void shouldReturnAllNameDepartmentMatchedEmployeesWhenNameAndDepartmentArePassedForExport() {
+        String name = "Yousuf", department = "IT";
+        when(jpa.findByCriteriaForExport(name, department, sort)).thenReturn((List.of(employee)));
+
+        List<Employee> all = repository.findByCriteriaForExport(name, department, sort);
+
+        assertEquals(1, all.size());
+        assertEquals(employee, all.get(0));
+        verify(jpa, times(1)).findByCriteriaForExport(name, department, sort);
     }
 }

@@ -5,6 +5,7 @@ import org.employeesytem.dto.Employee;
 import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.service.EmployeeService;
+import org.employeesytem.util.CSVExporter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -14,16 +15,24 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.emptyOrNullString;
+import static org.hamcrest.Matchers.not;
+import static org.hamcrest.Matchers.startsWith;
+import static org.hamcrest.Matchers.endsWith;
+import static org.hamcrest.Matchers.allOf;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.when;
@@ -36,6 +45,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -50,12 +60,16 @@ public class EmployeeControllerTest {
 
     @MockBean
     private EmployeeService employeeService;
+    @MockBean
+    private CSVExporter exporter;
 
     private Employee employee;
+    private Sort sort;
 
     @BeforeEach
     public void setUp() {
         employee = new Employee(101, "Yousuf", "Shaik", "yousuf@gmail.com", "IT", new BigDecimal("123456"));
+        sort = Sort.by("firstName").ascending();
     }
 
     @Test
@@ -426,5 +440,67 @@ public class EmployeeControllerTest {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().string("Department must be one of: HR, IT, MARKETING, SALES, FINANCE"));
+    }
+
+    @Test
+    void shouldExportAllEmployeesToCSVSortByParameterIsPassed() throws Exception {
+        Employee employee2 = new Employee(102, "Laddu", "B", "bca@gmail.com", "HR", BigDecimal.valueOf(100000.50));
+        List<Employee> mockEmployees = List.of(employee, employee2);
+        String csvContent = "ID,First Name,Last Name,Email,Department,Salary\n" +
+                "101,\"Yousuf\",\"Shaik\",\"yousuf@gmail.com\",\"IT\",123456.00\n" +
+                "102,\"Laddu\",\"B\",\"bca@gmail.com\",\"HR\",100000.50\n";
+        byte[] mockCsvBytes = csvContent.getBytes(StandardCharsets.UTF_8);
+        when(employeeService.findAllEmployeesForExport(null, null, sort)).thenReturn(mockEmployees);
+        when(exporter.writeEmployeesToCsv(anyList())).thenReturn(mockCsvBytes);
+
+        mockMvc.perform(get("/api/v1/employees/export")
+                        .param("sort", "firstName,asc")
+                        .characterEncoding(StandardCharsets.UTF_8.name()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("text/csv"))
+                // Assert Content Disposition header for file download
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        allOf(
+                                startsWith("attachment; filename=\"employees_"),
+                                endsWith(".csv\""))))
+                .andExpect(content().string(not(emptyOrNullString())))
+                .andExpect(content().string(containsString("ID,First Name,Last Name,Email,Department,Salary")))
+                .andExpect(content().string(containsString("101,\"Yousuf\",\"Shaik\",\"yousuf@gmail.com\",\"IT\",123456.00")))
+                .andExpect(content().string(containsString("102,\"Laddu\",\"B\",\"bca@gmail.com\",\"HR\",100000.50")));
+        verify(employeeService, times(1)).findAllEmployeesForExport(null, null, sort);
+    }
+
+    @Test
+    void shouldExportAllEmployeesToCSVSortByParameterAndNameAndDepartmentArePassed() throws Exception {
+        String department = "IT";
+        String name = "Yousuf";
+        Employee employee2 = new Employee(102, "Laddu", name, "bca@gmail.com", department, BigDecimal.valueOf(100000.50));
+        List<Employee> mockEmployees = List.of(employee, employee2);
+        String csvContent = "ID,First Name,Last Name,Email,Department,Salary\n" +
+                "101,\"Yousuf\",\"Shaik\",\"yousuf@gmail.com\",\"IT\",123456.00\n" +
+                "102,\"Laddu\",\"Yousuf\",\"bca@gmail.com\",\"IT\",100000.50\n";
+        byte[] mockCsvBytes = csvContent.getBytes(StandardCharsets.UTF_8);
+        when(employeeService.findAllEmployeesForExport(name, department, sort)).thenReturn(mockEmployees);
+        when(exporter.writeEmployeesToCsv(anyList())).thenReturn(mockCsvBytes);
+
+        mockMvc.perform(get("/api/v1/employees/export")
+                        .param("name", name)
+                        .param("department", department)
+                        .param("sort", "firstName,asc")
+                        .characterEncoding(StandardCharsets.UTF_8.name()))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(content().contentType("text/csv"))
+                // Assert Content Disposition header for file download
+                .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                        allOf(
+                                startsWith("attachment; filename=\"employees_"),
+                                endsWith(".csv\""))))
+                .andExpect(content().string(not(emptyOrNullString())))
+                .andExpect(content().string(containsString("ID,First Name,Last Name,Email,Department,Salary")))
+                .andExpect(content().string(containsString("101,\"Yousuf\",\"Shaik\",\"yousuf@gmail.com\",\"IT\",123456.00")))
+                .andExpect(content().string(containsString("102,\"Laddu\",\"Yousuf\",\"bca@gmail.com\",\"IT\",100000.50")));
+        verify(employeeService, times(1)).findAllEmployeesForExport(name, department, sort);
     }
 }

@@ -6,10 +6,10 @@ import org.springframework.data.web.config.EnableSpringDataWebSupport;
 
 @SpringBootApplication
 @EnableSpringDataWebSupport(pageSerializationMode = EnableSpringDataWebSupport.PageSerializationMode.VIA_DTO)
-public class EmployeesytemApplication {
+public class EmployeeSytemApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(EmployeesytemApplication.class, args);
+		SpringApplication.run(EmployeeSytemApplication.class, args);
 	}
 
 }

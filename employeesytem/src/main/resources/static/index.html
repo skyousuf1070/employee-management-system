@@ -57,6 +57,7 @@
     <div>
         <a href="/create.html">Create</a> |
         <a href="/update.html">Update</a>
+        <button onclick="exportEmployeesToCSV()">&#x2B07; Export to CSV</button>
     </div>
     <h3>Total Employees: <span id="empCount">0</span></h3>
 </div>
@@ -233,6 +234,27 @@
                 loadEmployees(currentPage);
             })
             .catch(error => console.error("Error deleting employee:", error));
+    }
+
+    function exportEmployeesToCSV() {
+        const sortField = document.getElementById("sortField").value;
+        const sortDirection = document.getElementById("sortDirection").value;
+        const searchQuery = document.getElementById("searchQuery").value.trim();
+        const departmentQuery = document.getElementById("departmentQuery").value.trim();
+
+        const params = [];
+        params.push(`sort=${sortField},${sortDirection}`);
+
+        if (searchQuery) {
+            params.push(`name=${encodeURIComponent(searchQuery)}`);
+        }
+        if (departmentQuery) {
+            params.push(`department=${encodeURIComponent(departmentQuery)}`);
+        }
+
+        const exportUrl = `/api/v1/employees/export?${params.join('&')}`;
+
+        window.location.href = exportUrl;
     }
 
     // Initial Load
