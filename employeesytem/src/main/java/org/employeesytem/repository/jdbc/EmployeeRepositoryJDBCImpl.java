@@ -8,6 +8,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.jdbc.core.BeanPropertyRowMapper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
@@ -86,5 +87,21 @@ public class EmployeeRepositoryJDBCImpl implements EmployeeRepository {
     @Override
     public Long count() {
         return jdbc.queryForObject("SELECT COUNT(*) FROM employee", Long.class);
+    }
+
+    // To-do: Implement them
+    @Override
+    public Page<Employee> findByCriteria(String name, String department, Pageable pageable) {
+        return null;
+    }
+
+    @Override
+    public List<Employee> findAll(Sort sort) {
+        return List.of();
+    }
+
+    @Override
+    public List<Employee> findByCriteriaForExport(String name, String department, Sort sort) {
+        return List.of();
     }
 }

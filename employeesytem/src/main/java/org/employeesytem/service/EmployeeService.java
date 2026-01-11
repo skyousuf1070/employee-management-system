@@ -5,10 +5,12 @@ import org.employeesytem.exceptions.DuplicateEmployeeException;
 import org.employeesytem.exceptions.EmployeeNotFoundException;
 import org.employeesytem.repository.EmployeeRepository;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
+import java.util.List;
 import java.util.Optional;
 
 @Service
@@ -19,9 +21,13 @@ public class EmployeeService {
         this.repository = repository;
     }
 
-    public Page<Employee> findAllEmployees(int page, int size) {
-        Pageable pageRequest = PageRequest.of(page, size);
-        return repository.findAll(pageRequest);
+    public Page<Employee> findAllEmployees(Pageable pageable, String name, String department) {
+        String nameFilter = StringUtils.hasText(name) ? name.trim() : null;
+        String departmentFilter = StringUtils.hasText(department) ? department.trim() : null;
+        if (nameFilter == null && departmentFilter == null) {
+            return repository.findAll(pageable);
+        }
+        return repository.findByCriteria(nameFilter, departmentFilter, pageable);
     }
 
     public Employee addEmployee(Employee employee) {
@@ -52,5 +58,14 @@ public class EmployeeService {
 
     public Long getEmployeeCount() {
         return repository.count();
+    }
+
+    public List<Employee> findAllEmployeesForExport(String name, String department, Sort sort) {
+        String nameFilter = StringUtils.hasText(name) ? name.trim() : null;
+        String departmentFilter = StringUtils.hasText(department) ? department.trim() : null;
+        if (nameFilter == null && departmentFilter == null) {
+            return repository.findAll(sort);
+        }
+        return repository.findByCriteriaForExport(nameFilter, departmentFilter, sort);
     }
 }

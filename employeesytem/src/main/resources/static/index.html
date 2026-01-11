@@ -15,11 +15,29 @@
             margin-bottom: 20px;
         }
 
+        /* Controls Container for Sorting and Search */
+        .controls-container {
+            display: flex;
+            justify-content: flex-start;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+
+        /* New class for search group */
+        .search-group {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
         /* Pagination Styles */
         .pagination-container {
             margin-top: 15px;
             display: flex;
-            justify-content: flex-end; /* Align to right */
+            justify-content: flex-end;
             align-items: center;
             gap: 10px;
         }
@@ -39,11 +57,49 @@
     <div>
         <a href="/create.html">Create</a> |
         <a href="/update.html">Update</a>
+        <button onclick="exportEmployeesToCSV()">&#x2B07; Export to CSV</button>
     </div>
     <h3>Total Employees: <span id="empCount">0</span></h3>
 </div>
 
 <h2>Employees List</h2>
+
+<div class="controls-container">
+
+    <div class="search-group">
+        <label for="searchQuery">Search Name:</label>
+        <input type="text" id="searchQuery" placeholder="Enter name..." />
+    </div>
+
+    <div class="search-group">
+        <label for="departmentQuery">Filter Department:</label>
+        <select id="departmentQuery">
+            <option value="">All Departments</option>
+            <option value="HR">HR</option>
+            <option value="IT">IT</option>
+            <option value="MARKETING">Marketing</option>
+            <option value="SALES">Sales</option>
+            <option value="FINANCE">Finance</option>
+        </select>
+    </div>
+    <button onclick="loadEmployees(0)">Apply Filter</button>
+
+    <label for="sortField">Sort By:</label>
+    <select id="sortField" onchange="loadEmployees(0)">
+        <option value="id">ID</option>
+        <option value="firstName">First Name</option>
+        <option value="department">Department</option>
+        <option value="salary">Salary</option>
+        <option value="lastName">Last Name</option>
+    </select>
+
+    <label for="sortDirection">Direction:</label>
+    <select id="sortDirection" onchange="loadEmployees(0)">
+        <option value="asc">Ascending (A-Z, Low-High)</option>
+        <option value="desc">Descending (Z-A, High-Low)</option>
+    </select>
+</div>
+
 
 <table id="employeeTable">
     <thead>
@@ -72,22 +128,48 @@
             // Update the global current page
             currentPage = page;
 
-            // Fetch data with dynamic page number and size
-            const res = await fetch(`/api/v1/employees?page=${currentPage}&size=${pageSize}`);
+            // 1. GET ALL CONTROL VALUES
+            const sortField = document.getElementById("sortField").value;
+            const sortDirection = document.getElementById("sortDirection").value;
+            const searchQuery = document.getElementById("searchQuery").value.trim();
+            const departmentQuery = document.getElementById("departmentQuery").value.trim();
+
+            const params = [];
+            params.push(`page=${currentPage}`);
+            params.push(`size=${pageSize}`);
+            params.push(`sort=${sortField},${sortDirection}`);
+
+            // Add Name search query if present
+            if (searchQuery) {
+                params.push(`name=${encodeURIComponent(searchQuery)}`);
+            }
+            // Add Department search query if present
+            if (departmentQuery) {
+                params.push(`department=${encodeURIComponent(departmentQuery)}`);
+            }
+
+            const url = `/api/v1/employees?${params.join('&')}`;
+
+            // 3. Fetch data
+            const res = await fetch(url);
 
             if (!res.ok) throw new Error("Failed to fetch");
 
             const data = await res.json();
 
-            // 1. EXTRACT DATA
-            // 'data.content' holds the array, 'data.page' holds metadata
-            const employees = data.content;
-            const pageMeta = data.page;
+            // 4. EXTRACT DATA
+            const employees = data.content || [];
+            const pageMeta = data.page || {};
+
+            // Use safe access on pageMeta, defaulting to 0 or 1 for safety
+            const totalElements = pageMeta.totalElements ?? 0;
+            const totalPagesCount = pageMeta.totalPages ?? 1;
+            const currentPageNumber = pageMeta.number ?? 0;
 
             // Update Total Pages global variable
-            totalPages = pageMeta.totalPages;
+            totalPages = totalPagesCount;
 
-            // 2. RENDER TABLE
+            // 5. RENDER TABLE
             let rows = "";
             if (employees.length === 0) {
                 rows = '<tr><td colspan="7" style="text-align:center">No employees found.</td></tr>';
@@ -109,16 +191,18 @@
             }
             document.querySelector("#employeeTable tbody").innerHTML = rows;
 
-            // 3. UPDATE UI INFO (Total count and Page X of Y)
-            document.getElementById("empCount").innerText = pageMeta.totalElements;
-            document.getElementById("pageInfo").innerText = `Page ${pageMeta.number + 1} of ${pageMeta.totalPages}`;
+            // 6. UPDATE UI INFO (Total count and Page X of Y)
+            document.getElementById("empCount").innerText = totalElements;
+            document.getElementById("pageInfo").innerText = `Page ${currentPageNumber + 1} of ${totalPagesCount || 1}`;
 
-            // 4. ENABLE/DISABLE BUTTONS
+            // 7. ENABLE/DISABLE BUTTONS
             updatePaginationButtons();
 
         } catch (error) {
             console.error("Error loading employees:", error);
             document.querySelector("#employeeTable tbody").innerHTML = '<tr><td colspan="7">Error loading data.</td></tr>';
+            document.getElementById("empCount").innerText = 0; // Set count to 0 on error
+            document.getElementById("pageInfo").innerText = `Page 1 of 1`; // Reset page info on error
         }
     }
 
@@ -150,6 +234,27 @@
                 loadEmployees(currentPage);
             })
             .catch(error => console.error("Error deleting employee:", error));
+    }
+
+    function exportEmployeesToCSV() {
+        const sortField = document.getElementById("sortField").value;
+        const sortDirection = document.getElementById("sortDirection").value;
+        const searchQuery = document.getElementById("searchQuery").value.trim();
+        const departmentQuery = document.getElementById("departmentQuery").value.trim();
+
+        const params = [];
+        params.push(`sort=${sortField},${sortDirection}`);
+
+        if (searchQuery) {
+            params.push(`name=${encodeURIComponent(searchQuery)}`);
+        }
+        if (departmentQuery) {
+            params.push(`department=${encodeURIComponent(departmentQuery)}`);
+        }
+
+        const exportUrl = `/api/v1/employees/export?${params.join('&')}`;
+
+        window.location.href = exportUrl;
     }
 
     // Initial Load
